@@ -1,0 +1,6 @@
+.DS_Store
+.Rproj.user
+.Rhistory
+.Ruserdata
+/Data/simulations/**/*.csv
+!/Data/simulations/**/jacobian_*.csv
