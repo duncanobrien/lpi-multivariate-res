@@ -9,7 +9,7 @@ ctrl_invasive = 5.0 #follows Dakos 2018 (typical collapse at 2.5-3.0)
 y_invasive = [fill(0.0,201);(0:(ctrl_invasive-0)/99:ctrl_invasive)] #control increases from t200 to t300
 signal_invasive = LinearInterpolation((0:1:300), y_invasive)
 
-y_null = [fill(0.0,201);(0:(ctrl_invasive-0)/99:ctrl_invasive)] #control increases from t200 to t300
+y_null = fill(0.0,301) #control increases from t200 to t300
 signal_null = LinearInterpolation((0:1:300), y_null)
 
 motifs = (1,2,6,9,10)
@@ -21,6 +21,7 @@ motifs = (1,2,6,9,10)
 out_df =DataFrame([[],[],[],[],[]], [:community,:collapse,:stress_param,:max_eigval,:motif]) #array to store jacobian information
 
 for i in motifs
+    
     #i = 1
     motif_dat = RData.load(string("Data/networks/5_spp/web_",i,".RData"),convert=true)["out_file"] #load motif networks generated in R
     #motif_jac_dat = extract_max_eigvec(motif_dat,0.0:0.01:3.0, 100, "auto"; model = "harvest",abs_max = false,concrete_jac = true) #simulate deterministic model for each community
@@ -37,9 +38,9 @@ for i in motifs
 
     motif_sim_unstress_dat = motif_sim(motif_dat,missing,"auto",repeat([0.1],length(motif_dat[i]["Neq"])),(0,300),signal_null,100,noise_col = "white",saveat=1.0)  #simulate stochastic communities but unstressed
     motif_unstress_csv = extract_ts_for_csv(motif_sim_unstress_dat,string(i),100:300,5) 
-    CSV.write(string("Data/simulations/5_spp/harvest/unstressed/motif_",i,".csv"),motif_unstress_csv,compress=true) #save simulations
+    CSV.write(string("Data/simulations/5_spp/harvest/unstressed/motif_",i,".csv"),motif_unstress_csv,compress=false) #save simulations
 
-if i == 10 
+if i == last(motifs) 
     CSV.write(string("Data/simulations/5_spp/harvest/stress/jacobian_5_spp.csv"),out_df,compress=false) #save out jacobian info on last iteration
 end
 end
@@ -74,11 +75,11 @@ end
     CSV.write(string("Data/simulations/5_spp/invasive/stress/motif_",i,".csv"),motif_csv,compress=true) #save simulations
     append!(out_df,motif_jac_dat)
 
-    motif_sim_unstress_dat = invasive_sim(inv_motif_dat,missing,"auto",repeat([0.1],length(inv_motif_dat[i]["Neq"])),(0,300),signal_invasive,100,noise_col = "white",saveat=1.0) #simulate stochastic communities.
+    motif_sim_unstress_dat = invasive_sim(inv_motif_dat,missing,"auto",repeat([0.1],length(inv_motif_dat[i]["Neq"])),(0,300),signal_null,100,noise_col = "white",saveat=1.0) #simulate stochastic communities.
     motif_unstress_csv = extract_ts_for_csv(motif_sim_dat,string(i),100:300,5) #crop to t100 - t400 and label as motif "1"
     CSV.write(string("Data/simulations/5_spp/invasive/unstressed/motif_",i,".csv"),motif_unstress_csv,compress=true) #save simulations
 
-if i == 10 
+if i == last(motifs)  
     CSV.write(string("Data/simulations/5_spp/invasive/stress/jacobian_5_spp.csv"),out_df,compress=false) #save out jacobian info on last iteration
 end
 end
@@ -101,15 +102,15 @@ for i in motifs
     #stress vector, number of simulations (per community), noise colour (white or correlated), saveat what resolution (dt = 0.1) 
     # motif_sim_dat = motif_sim(motif_dat,harvested_spp_ls[string(i)],[0.1,0.1,0.1,0.1],(0,500),signal_motif,100,noise_col = "white",saveat=1.0) 
     motif_csv = extract_ts_for_csv(motif_sim_dat,string(i),100:300,5) #crop to t100 - t300, label as motif "i" and round to 5 decimal places
-    CSV.write(string("Data/simulations/5_spp/harvest/stress/motif_",i,".csv"),motif_csv,compress=true) #save simulations
+    CSV.write(string("Data/simulations/10_spp/harvest/stress/motif_",i,".csv"),motif_csv,compress=true) #save simulations
     append!(out_df,motif_jac_dat) #add jacobian info to expanding dataframe
 
     motif_sim_unstress_dat = motif_sim(motif_dat,missing,"auto",repeat([0.1],length(motif_dat[i]["Neq"])),(0,300),signal_null,100,noise_col = "white",saveat=1.0)  #simulate stochastic communities but unstressed
     motif_unstress_csv = extract_ts_for_csv(motif_sim_unstress_dat,string(i),100:300,5) 
     CSV.write(string("Data/simulations/10_spp/harvest/unstressed/motif_",i,".csv"),motif_unstress_csv,compress=true) #save simulations
 
-if i == 10 
-    CSV.write(string("Data/simulations/10_spp/harvest/stress/jacobian_5_spp.csv"),out_df,compress=false) #save out jacobian info on last iteration
+if i == last(motifs)   
+    CSV.write(string("Data/simulations/10_spp/harvest/stress/jacobian_10_spp.csv"),out_df,compress=false) #save out jacobian info on last iteration
 end
 end
 
@@ -143,11 +144,11 @@ end
     CSV.write(string("Data/simulations/10_spp/invasive/stress/motif_",i,".csv"),motif_csv,compress=true) #save simulations
     append!(out_df,motif_jac_dat)
 
-    motif_sim_unstress_dat = invasive_sim(inv_motif_dat,missing,"auto",repeat([0.1],length(inv_motif_dat[i]["Neq"])),(0,300),signal_invasive,100,noise_col = "white",saveat=1.0) #simulate stochastic communities.
+    motif_sim_unstress_dat = invasive_sim(inv_motif_dat,missing,"auto",repeat([0.1],length(inv_motif_dat[i]["Neq"])),(0,300),signal_null,100,noise_col = "white",saveat=1.0) #simulate stochastic communities.
     motif_unstress_csv = extract_ts_for_csv(motif_sim_dat,string(i),100:300,5) #crop to t100 - t400 and label as motif "1"
     CSV.write(string("Data/simulations/10_spp/invasive/unstressed/motif_",i,".csv"),motif_unstress_csv,compress=true) #save simulations
 
-if i == 10 
+if i == last(motifs)   
     CSV.write(string("Data/simulations/10_spp/invasive/stress/jacobian_5_spp.csv"),out_df,compress=false) #save out jacobian info on last iteration
 end
 end
@@ -177,8 +178,8 @@ for i in motifs
     motif_unstress_csv = extract_ts_for_csv(motif_sim_unstress_dat,string(i),100:300,5) 
     CSV.write(string("Data/simulations/15_spp/harvest/unstressed/motif_",i,".csv"),motif_unstress_csv,compress=true) #save simulations
 
-if i == 10 
-    CSV.write(string("Data/simulations/15_spp/harvest/stress/jacobian_5_spp.csv"),out_df,compress=false) #save out jacobian info on last iteration
+if i == last(motifs)   
+    CSV.write(string("Data/simulations/15_spp/harvest/stress/jacobian_15_spp.csv"),out_df,compress=false) #save out jacobian info on last iteration
 end
 end
 
@@ -212,12 +213,12 @@ end
     CSV.write(string("Data/simulations/15_spp/invasive/stress/motif_",i,".csv"),motif_csv,compress=true) #save simulations
     append!(out_df,motif_jac_dat)
 
-    motif_sim_unstress_dat = invasive_sim(inv_motif_dat,missing,"auto",repeat([0.1],length(inv_motif_dat[i]["Neq"])),(0,300),signal_invasive,100,noise_col = "white",saveat=1.0) #simulate stochastic communities.
+    motif_sim_unstress_dat = invasive_sim(inv_motif_dat,missing,"auto",repeat([0.1],length(inv_motif_dat[i]["Neq"])),(0,300),signal_null,100,noise_col = "white",saveat=1.0) #simulate stochastic communities.
     motif_unstress_csv = extract_ts_for_csv(motif_sim_dat,string(i),100:300,5) #crop to t100 - t400 and label as motif "1"
     CSV.write(string("Data/simulations/15_spp/invasive/unstressed/motif_",i,".csv"),motif_unstress_csv,compress=true) #save simulations
 
-if i == 10 
-    CSV.write(string("Data/simulations/15_spp/invasive/stress/jacobian_5_spp.csv"),out_df,compress=false) #save out jacobian info on last iteration
+if i == last(motifs)   
+    CSV.write(string("Data/simulations/15_spp/invasive/stress/jacobian_15_spp.csv"),out_df,compress=false) #save out jacobian info on last iteration
 end
 end
 
@@ -246,8 +247,8 @@ for i in motifs
     motif_unstress_csv = extract_ts_for_csv(motif_sim_unstress_dat,string(i),100:300,5) 
     CSV.write(string("Data/simulations/20_spp/harvest/unstressed/motif_",i,".csv"),motif_unstress_csv,compress=true) #save simulations
 
-if i == 10 
-    CSV.write(string("Data/simulations/20_spp/harvest/stress/jacobian_5_spp.csv"),out_df,compress=false) #save out jacobian info on last iteration
+if i == last(motifs)   
+    CSV.write(string("Data/simulations/20_spp/harvest/stress/jacobian_20_spp.csv"),out_df,compress=false) #save out jacobian info on last iteration
 end
 end
 
@@ -281,12 +282,12 @@ end
     CSV.write(string("Data/simulations/20_spp/invasive/stress/motif_",i,".csv"),motif_csv,compress=true) #save simulations
     append!(out_df,motif_jac_dat)
 
-    motif_sim_unstress_dat = invasive_sim(inv_motif_dat,missing,"auto",repeat([0.1],length(inv_motif_dat[i]["Neq"])),(0,300),signal_invasive,100,noise_col = "white",saveat=1.0) #simulate stochastic communities.
+    motif_sim_unstress_dat = invasive_sim(inv_motif_dat,missing,"auto",repeat([0.1],length(inv_motif_dat[i]["Neq"])),(0,300),signal_null,100,noise_col = "white",saveat=1.0) #simulate stochastic communities.
     motif_unstress_csv = extract_ts_for_csv(motif_sim_dat,string(i),100:300,5) #crop to t100 - t400 and label as motif "1"
     CSV.write(string("Data/simulations/20_spp/invasive/unstressed/motif_",i,".csv"),motif_unstress_csv,compress=true) #save simulations
 
-if i == 10 
-    CSV.write(string("Data/simulations/20_spp/invasive/stress/jacobian_5_spp.csv"),out_df,compress=false) #save out jacobian info on last iteration
+if i == last(motifs)   
+    CSV.write(string("Data/simulations/20_spp/invasive/stress/jacobian_20_spp.csv"),out_df,compress=false) #save out jacobian info on last iteration
 end
 end
 
@@ -315,8 +316,8 @@ for i in motifs
     motif_unstress_csv = extract_ts_for_csv(motif_sim_unstress_dat,string(i),100:300,5) 
     CSV.write(string("Data/simulations/25_spp/harvest/unstressed/motif_",i,".csv"),motif_unstress_csv,compress=true) #save simulations
 
-if i == 10 
-    CSV.write(string("Data/simulations/25_spp/harvest/stress/jacobian_5_spp.csv"),out_df,compress=false) #save out jacobian info on last iteration
+if i == last(motifs)   
+    CSV.write(string("Data/simulations/25_spp/harvest/stress/jacobian_25_spp.csv"),out_df,compress=false) #save out jacobian info on last iteration
 end
 end
 
@@ -350,11 +351,11 @@ end
     CSV.write(string("Data/simulations/25_spp/invasive/stress/motif_",i,".csv"),motif_csv,compress=true) #save simulations
     append!(out_df,motif_jac_dat)
 
-    motif_sim_unstress_dat = invasive_sim(inv_motif_dat,missing,"auto",repeat([0.1],length(inv_motif_dat[i]["Neq"])),(0,300),signal_invasive,100,noise_col = "white",saveat=1.0) #simulate stochastic communities.
+    motif_sim_unstress_dat = invasive_sim(inv_motif_dat,missing,"auto",repeat([0.1],length(inv_motif_dat[i]["Neq"])),(0,300),signal_null,100,noise_col = "white",saveat=1.0) #simulate stochastic communities.
     motif_unstress_csv = extract_ts_for_csv(motif_sim_dat,string(i),100:300,5) #crop to t100 - t400 and label as motif "1"
     CSV.write(string("Data/simulations/25_spp/invasive/unstressed/motif_",i,".csv"),motif_unstress_csv,compress=true) #save simulations
 
-if i == 10 
-    CSV.write(string("Data/simulations/25_spp/invasive/stress/jacobian_5_spp.csv"),out_df,compress=false) #save out jacobian info on last iteration
+if i == last(motifs)   
+    CSV.write(string("Data/simulations/25_spp/invasive/stress/jacobian_25_spp.csv"),out_df,compress=false) #save out jacobian info on last iteration
 end
 end
