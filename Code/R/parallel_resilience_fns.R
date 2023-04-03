@@ -29,7 +29,7 @@ parallel_multiJI <- function(dt,var,n_cores = 4,...){
   dt2 <- foreach::foreach(x = dt2,.packages=c("data.table","EWSmethods"),.export = c("multi_smap_jacobian","smap_jacobian_est","multiJI")) %dopar% {
     
     #out <- EWSmethods::smapJI(data = x[,c("time",names(x)[grepl("spp_",names(x))]),with =FALSE],...)
-    out <- multiJI(data = as.data.frame(x[,c("time",names(x)[grepl("spp_",names(x))]),with =FALSE]),scale = T)
+    out <- multiJI(data = as.data.frame(x[,c("time",names(x)[grepl("spp_",names(x))]),with =FALSE]),...)
     out <- data.frame("var" = x[,var,with=F][1],out)
     names(out) <- c(var,"time","multiJI")
     

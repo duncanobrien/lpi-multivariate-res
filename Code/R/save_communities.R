@@ -94,3 +94,35 @@ pbmcapply::pbmclapply(1:10,FUN = function(i){
   save(out_file,file = paste("Data/networks/25_spp/web_",i,".RData",sep = ""))
   
 },mc.cores = 5)
+
+###################################
+## Simulate 30 species communities (assuming pyramid of richnesses - decreasing up trophic levels)
+###################################
+pbmcapply::pbmclapply(1:10,FUN = function(i){
+  if(max(adjacent_matrix_key_minimal[adjacent_matrix_key_minimal$motif == i,]$tlvl) ==3){
+    new_spp_ls <- proportion_trophic(30,0.5,0.35,0.15,0.0)
+  }else{
+    new_spp_ls <- proportion_trophic(30,0.5,0.30,0.15,0.05)
+  }
+  
+  init_A <-generalise_A(adjacent_matrix_list_minimal,i,adjacent_matrix_key_minimal[adjacent_matrix_key_minimal$motif == i,-1],new_spp_ls)
+  out_file <-generate_foodwebs_large(i,init_A,new_spp_ls,300,minimal =T)
+  save(out_file,file = paste("Data/networks/30_spp/web_",i,".RData",sep = ""))
+  
+},mc.cores = 5)
+
+###################################
+## Simulate 50 species communities (assuming pyramid of richnesses - decreasing up trophic levels)
+###################################
+pbmcapply::pbmclapply(1:10,FUN = function(i){
+  if(max(adjacent_matrix_key_minimal[adjacent_matrix_key_minimal$motif == i,]$tlvl) ==3){
+    new_spp_ls <- proportion_trophic(50,0.5,0.35,0.15,0.0)
+  }else{
+    new_spp_ls <- proportion_trophic(50,0.5,0.30,0.15,0.05)
+  }
+  
+  init_A <-generalise_A(adjacent_matrix_list_minimal,i,adjacent_matrix_key_minimal[adjacent_matrix_key_minimal$motif == i,-1],new_spp_ls)
+  out_file <-generate_foodwebs_large(i,init_A,new_spp_ls,300,minimal =T)
+  save(out_file,file = paste("Data/networks/50_spp/web_",i,".RData",sep = ""))
+  
+},mc.cores = 5)
