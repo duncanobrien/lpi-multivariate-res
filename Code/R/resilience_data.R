@@ -114,7 +114,8 @@ resilience_models <- lapply(c("harvest","invasive"),FUN = function(model){
   
   # sample_id <- unique(resilience_stress_csv$sim_id)
   # tt <- copy(resilience_stress_csv) %>%
-  #   subset(.,sim_id %in% sample_id[1:100])
+  #   subset(.,sim_id %in% sample_id[1:10])
+  # 
   # out_stress_csv <- merge(copy(tt),parallel_multiJI(copy(tt), var = "sim_id",n_cores = 4,winsize = 25,scale = TRUE),
   #                         by =c("sim_id","time")) %>%
   #     merge(.,parallel_uniJI(copy(tt), var = "sim_id",n_cores = 4,winsize = 25,scale = TRUE,E = 1),
@@ -123,7 +124,7 @@ resilience_models <- lapply(c("harvest","invasive"),FUN = function(model){
   #           by =c("time","sim_id")) %>%
   #     merge(.,parallel_mvi(copy(tt), var = "sim_id",n_cores = 4,winsize = 25),
   #           by =c("time","sim_id"))
-  # 
+
   # kk <- copy(resilience_unstressed_csv) %>%
   #   subset(.,sim_id %in% sample_id[1:100])
   # out_unstressed_csv <- merge(copy(kk),parallel_multiJI(copy(kk), var = "sim_id",n_cores = 4,winsize = 25,scale = TRUE),
@@ -143,7 +144,7 @@ resilience_models <- lapply(c("harvest","invasive"),FUN = function(model){
   
   out_stress_csv <- merge(copy(resilience_stress_csv),parallel_multiJI(copy(resilience_stress_csv), var = "sim_id",n_cores = 4,winsize = 25,scale = TRUE),
                           by =c("time","sim_id")) %>% #calculate each resilience metric for the stressed models
-    merge(.,parallel_uniJI(copy(resilience_stress_csv), var = "sim_id",n_cores = 4,winsize = 25,scale = TRUE,E = 1),
+    merge(.,parallel_uniJI(copy(resilience_stress_csv), var = "sim_id",n_cores = 4,winsize = 25,scale = TRUE,E = 1,tau = ts_len*-0.1),
           by =c("time","sim_id")) %>%
     merge(.,parallel_FI(copy(resilience_stress_csv), var = "sim_id",n_cores = 4,winsize = 25),
           by =c("time","sim_id")) %>%
@@ -158,7 +159,7 @@ resilience_unstressed_csv <-  resilience_unstressed_csv %>%
   
   out_unstressed_csv <- merge(copy(resilience_unstressed_csv),parallel_multiJI(copy(resilience_unstressed_csv), var = "sim_id",n_cores = 4,winsize = 25,scale = TRUE),
                               by =c("time","sim_id")) %>% #calculate each resilience metric for the stressed models
-    merge(.,parallel_uniJI(copy(resilience_unstressed_csv), var = "sim_id",n_cores = 4,winsize = 25,scale = TRUE,E = 1),
+    merge(.,parallel_uniJI(copy(resilience_unstressed_csv), var = "sim_id",n_cores = 4,winsize = 25,scale = TRUE,E = 1,tau = ts_len*-0.1),
           by =c("time","sim_id")) %>%
     merge(.,parallel_FI(copy(resilience_unstressed_csv), var = "sim_id",n_cores = 4,winsize = 25),
           by =c("time","sim_id")) %>%
