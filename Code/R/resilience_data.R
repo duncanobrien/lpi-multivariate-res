@@ -1,7 +1,7 @@
 ########################################################################
 ## Preamble ##
 ########################################################################
-require(EWSmethods)
+#require(EWSmethods)
 require(data.table)
 require(magrittr)
 require(dplyr)
@@ -105,17 +105,35 @@ resilience_models <- lapply(c("harvest","invasive"),FUN = function(model){
   #         by =c("time","sim_id")) 
   
   inflec_col <- ifelse(model =="harvest","inflection_pt_decr","inflection_pt_incr") #harvesting model expected to positively inflect, the invasive model, negatively
+  
   resilience_stress_csv <-  resilience_stress_csv %>%
     .[,grep("^spp_",names(.)) := lapply(.SD, function(x){ifelse(model =="harvest",return(round(x*100)),return(round(x*10)))}), .SDcols = grep("^spp_",names(.)), by = "sim_id"] %>% #convert densities to integers of appropriate scale to LPI
     .[,grep("^spp_",names(.)) := lapply(.SD, function(x){rbinom(length(x), x, search_effort)}), .SDcols = grep("^spp_",names(.)), by = "sim_id"] %>% #introduce sampling error
     .[.[, .I[time %in% (round(unique(get(inflec_col)))-ts_len+1):round(unique(get(inflec_col)))], by = "sim_id"]$V1] #conditionally filter (by ts_len) by simulation identifier
   #.[time >= max(time)-ts_len+1,] %>% #stress begins at t100 but we crop here to representative lengths of LPI
   
-  sample_id <- unique(resilience_stress_csv$sim_id)
-  tt <- copy(resilience_stress_csv) %>%
-    subset(.,sim_id %in% sample_id[1:100])
-  out_stress_csv <- merge(copy(tt),parallel_multiJI(copy(tt), var = "sim_id",n_cores = 4,winsize = 25,scale = TRUE),
-                          by =c("sim_id","time"))
+  # sample_id <- unique(resilience_stress_csv$sim_id)
+  # tt <- copy(resilience_stress_csv) %>%
+  #   subset(.,sim_id %in% sample_id[1:100])
+  # out_stress_csv <- merge(copy(tt),parallel_multiJI(copy(tt), var = "sim_id",n_cores = 4,winsize = 25,scale = TRUE),
+  #                         by =c("sim_id","time")) %>%
+  #     merge(.,parallel_uniJI(copy(tt), var = "sim_id",n_cores = 4,winsize = 25,scale = TRUE,E = 1),
+  #           by =c("time","sim_id")) %>%
+  #     merge(.,parallel_FI(copy(tt), var = "sim_id",n_cores = 4,winsize = 25),
+  #           by =c("time","sim_id")) %>%
+  #     merge(.,parallel_mvi(copy(tt), var = "sim_id",n_cores = 4,winsize = 25),
+  #           by =c("time","sim_id"))
+  # 
+  # kk <- copy(resilience_unstressed_csv) %>%
+  #   subset(.,sim_id %in% sample_id[1:100])
+  # out_unstressed_csv <- merge(copy(kk),parallel_multiJI(copy(kk), var = "sim_id",n_cores = 4,winsize = 25,scale = TRUE),
+  #                         by =c("sim_id","time")) %>%
+  #   merge(.,parallel_uniJI(copy(kk), var = "sim_id",n_cores = 4,winsize = 25,scale = TRUE,E = 1),
+  #         by =c("time","sim_id")) %>%
+  #   merge(.,parallel_FI(copy(kk), var = "sim_id",n_cores = 4,winsize = 25),
+  #         by =c("time","sim_id")) %>%
+  #   merge(.,parallel_mvi(copy(kk), var = "sim_id",n_cores = 4,winsize = 25),
+  #         by =c("time","sim_id"))
 
   # out_stress_csv <- merge(copy(tt),parallel_multiJI(copy(tt), var = "sim_id",n_cores = 4,winsize = 25,scale = T),
   #                         by =c("sim_id","time"))
@@ -154,7 +172,8 @@ resilience_unstressed_csv <-  resilience_unstressed_csv %>%
       .[,model := model] %>% #add additional metadata
       .[,stressed := 1] %>%
       .[,ts_length := ts_len] %>%
-      .[,search_effort := search_effort]
+      .[,search_effort := search_effort] %>%
+      .[order(sim_id,time),] 
     
     out_unstressed_csv <- out_unstressed_csv %>%
       .[,c("sim_id",names(.)[grep("^spp_",names(.))],"target_node",
@@ -163,10 +182,26 @@ resilience_unstressed_csv <-  resilience_unstressed_csv %>%
       .[,model := model] %>% #add additional metadata
       .[,stressed := 0] %>%
       .[,ts_length := ts_len] %>%
-      .[,search_effort := search_effort]
+      .[,search_effort := search_effort] %>%
+      .[order(sim_id,time),] 
+
     
     out <- rbind(out_stress_csv,out_unstressed_csv) #merge stressed and unstressed data for saving
     return(out)
 
     }) %>%
   data.table::rbindlist()
+
+resilience_summary_data <- copy(out) %>%
+  melt(.,measure.vars = c("multiJI","mean_uniJI","max_uniJI","FI","mvi"),
+       variable.name = "metric",value.name = "metric_value") %>% #pivot resilience metrics longer
+  .[,trend :=  cor.test(time, metric_value, alternative = c("two.sided"), method = c("kendall"), conf.level = 0.95,na.action = na.omit)$estimate,
+    by = c("sim_id","metric", "model","stressed")] %>% #estimate Kendall tau correlation through time
+  .[,corrected_trend :=  ifelse(metric == "FI",abs(trend),trend), #as FI is expected to decrease, use it's absolute value to be comparable
+    by = c("sim_id","metric", "model","stressed")] %>%
+  .[,threshold_crossed :=  ifelse(metric %in% c("FI","mvi"), NA,
+      ifelse(any(metric_value > 1), 1,0)),by = c("sim_id","metric", "model","stressed")] %>% #for the Jacobian indices, a value >1 = unstable
+  .[,.SD[1],  c("sim_id","metric", "model","stressed")] %>% #drop time
+  .[,c("sim_id","metric","trend","corrected_trend","threshold_crossed","target_node","jac_collapse","model","stressed","ts_length","search_effort")] %>%
+  .[order(model,stressed,sim_id),] #order for readability
+  
