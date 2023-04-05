@@ -25,7 +25,7 @@ full_data <- full_data %>%
 summary_data <- summary_data %>%
   .[,success := ifelse(threshold_crossed == 1 & stressed ==1, 1,
                        ifelse(threshold_crossed == 0 & stressed == 0, 1,
-                              is.na(threshold_crossed), NA,0))] %>%
+                              ifelse(is.na(threshold_crossed), NA,0)))] %>%
   .[, c("motif", "community","sim") := data.table::tstrsplit(sim_id, "_", fixed=TRUE)]
 
 its <- 10000
@@ -36,7 +36,7 @@ wrmup <- 0.1*its
 # Model threshold
 ################################################
 
-success_mod <- brms::brm(brms::bf(success ~ metric*ts_len*search_effort*model - 1 + (1|motif/community)), 
+success_mod <- brms::brm(brms::bf(success ~ metric*ts_length*search_effort*model - 1 + (1|motif/community)), 
                                     data = summary_data,
                                     iter = its,
                                     thin = thn,

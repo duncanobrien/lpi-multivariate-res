@@ -14,12 +14,34 @@ source("Code/R/julia_wrangle_function.R")
 ################################################
 
 motif = 1
+#motif = c(1,2,6,9,10)
 ts_len = 70
+#ts_len = seq(10,70,15)
 num_spp = 5
+#num_spp = seq(5,25,5)
 model = "invasive"
 search_effort = 0.95
+#search_effort = seq(0.1,1.0,0.1)
 
-resilience_models <- lapply(c("harvest","invasive"),FUN = function(model){
+parameter_space <- expand.grid("motif" = motif,
+                               "num_spp" = num_spp,
+                               "ts_len" = ts_len,
+                               "search_effort" = search_effort) %>%
+  dplyr::arrange(motif,num_spp,ts_len,search_effort) %>%
+  base::split(interaction(.$motif,.$num_spp))
+
+i=1
+
+motif_data <- parameter_space[[i]]
+lapply(seq_len(nrow(motif_data)), function(df){
+  
+  parameter_data <- motif_data[df,]
+  motif = parameter_data$motif
+  ts_len = parameter_data$ts_len
+  num_spp = parameter_data$num_spp
+  search_effort = parameter_data$search_effort
+    
+  resilience_models <- lapply(c("harvest","invasive"),FUN = function(model){
 
   stress_path <- paste("Data/simulations/",num_spp,"_spp/",model,"/stress/",sep="") #define stressed model path
   load_stress_files <- fs::dir_ls(path = stress_path, regexp = paste0(stress_path, "motif_.*\\.csv$"))
@@ -206,3 +228,8 @@ resilience_summary_data <- copy(out) %>%
   .[,c("sim_id","metric","trend","corrected_trend","threshold_crossed","target_node","jac_collapse","model","stressed","ts_length","search_effort")] %>%
   .[order(model,stressed,sim_id),] #order for readability
   
+
+rm(resilience_summary_data,resilience_models)
+gc()
+}) %>%
+  data.table::rbindlist()
