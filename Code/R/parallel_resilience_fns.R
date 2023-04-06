@@ -11,7 +11,7 @@ source("/Users/ul20791/Desktop/Academia/PhD/Repositories/EWSmethods/EWSmethods/R
 source("/Users/ul20791/Desktop/Academia/PhD/Repositories/EWSmethods/EWSmethods/R/smap_jacobian.R")
 
 
-parallel_multiJI <- function(dt,var,n_cores = 4,...){
+parallel_multiJI <- function(dt,var,n_cores = 4,sample_spp = TRUE,winsize = 50,...){
   
   require(foreach)
   require(doFuture)
@@ -28,8 +28,30 @@ parallel_multiJI <- function(dt,var,n_cores = 4,...){
   
   dt2 <- foreach::foreach(x = dt2,.packages=c("data.table","EWSmethods"),.export = c("multi_smap_jacobian","smap_jacobian_est","multiJI")) %dopar% {
     
+    window <- round(dim(x)[1] * winsize/100)
+    spp_col <- names(x)[grepl("spp_",names(x))]
+    n_spp_ts <- length(spp_col)
+    
+    if(window < n_spp_ts){
+      #target_spp <- names(x[,spp_col,with = F])[colSums(x[,spp_col,with = F]) >0]
+      
+      target_spp <- spp_col[sapply(spp_col,function(spp){
+        sum(x[,spp,with=F] == as.numeric(names(sort(table(x[,spp,with=F]),decreasing = T)[1])))< (window-1) })]
+      
+      if(isFALSE(sample_spp)){
+        stop(paste0("Length of windowed time series (",window,") < number of nodes (" ,n_spp_ts,"). Increase winsize or allow sampling of species"))
+      }
+      if(isTRUE(sample_spp)){
+        warning(paste0("Length of windowed time series (",window,") < number of nodes (" ,n_spp_ts,"). Species have been sampled to allow index calculation"))
+        sampl_spp <- sample(target_spp,round(window/2),replace = F)
+        out <- multiJI(data = as.data.frame(x[,c("time",sampl_spp),with =FALSE]),...)
+      }
+    }else{
+      out <- multiJI(data = as.data.frame(x[,c("time",names(x)[grepl("spp_",names(x))]),with =FALSE]),...)
+      
+    }
     #out <- EWSmethods::smapJI(data = x[,c("time",names(x)[grepl("spp_",names(x))]),with =FALSE],...)
-    out <- multiJI(data = as.data.frame(x[,c("time",names(x)[grepl("spp_",names(x))]),with =FALSE]),...)
+    #out <- multiJI(data = as.data.frame(x[,c("time",names(x)[grepl("spp_",names(x))]),with =FALSE]),...)
     out <- data.frame("var" = x[,var,with=F][1],out)
     names(out) <- c(var,"time","multiJI")
     
@@ -75,18 +97,18 @@ parallel_uniJI <- function(dt,var,n_cores = 4,...){
     #   }
     #   
     # }
-    tmp <- lapply(names(x)[grepl("spp_",names(x))],function(i){
-
-      if(i == "spp_1"){
-      #EWSmethods::uniJI(x[,c("time",i),with =FALSE],E = 5,winsize=50)
-        uniJI(data= as.data.frame(x[,c("time",i),with =FALSE]),...)
-
-        }else{
-      #EWSmethods::uniJI(x[,c("time",i),with =FALSE],E = 5,winsize=50)[,-1]
-          uniJI(as.data.frame(x[,c("time",i),with =FALSE]),...)[,-1]
-          }
-      })
-
+    tmp <- lapply(names(x)[grepl("spp_",names(x))],function(k){
+      
+      if(k == "spp_1"){
+        #EWSmethods::uniJI(x[,c("time",i),with =FALSE],E = 5,winsize=50)
+        uniJI(data= as.data.frame(x[,c("time",k),with =FALSE]),...)
+        
+      }else{
+        #EWSmethods::uniJI(x[,c("time",i),with =FALSE],E = 5,winsize=50)[,-1]
+        uniJI(data = as.data.frame(x[,c("time",k),with =FALSE]),...)[,-1]
+      }
+    })
+    
     tmp <- do.call("cbind", tmp)
     
     out <- data.frame("var" = x[,var,with=F][1],
@@ -121,7 +143,15 @@ parallel_FI <- function(dt,var,n_cores = 4,...){
   
   dt2 <- foreach::foreach(x = dt2,.packages=c("data.table","EWSmethods"),.export = c("FI","NFisherpdf","roundTO")) %dopar% {
     
-    sost <- t(apply(x[,names(x)[grepl("spp_",names(x))],with =FALSE], MARGIN = 2, FUN = sd))
+    spp_col <- names(x)[grepl("spp_",names(x))]
+    
+    sampl_spp <- spp_col[!sapply(spp_col,function(spp){
+      length(unique(x[[spp]])) == 1 |  (sum(as.numeric(base::table(x[[spp]]) == 1)) == 1 & length(unique(x[[spp]])) == 2)
+    })]
+    
+    sampl_spp <- sample(sampl_spp,5,replace = F)
+    
+    sost <- t(apply(x[,sampl_spp,with =FALSE], MARGIN = 2, FUN = sd))
     #size of states. Transpose required to ensure a 1 x n matrix
     
     # out <- EWSmethods::FI(x[,"time",with =FALSE][[1]],as.data.frame(x[,names(x)[grepl("spp_",names(x))],with =FALSE]),sost = sost,winsize=50)
@@ -133,7 +163,7 @@ parallel_FI <- function(dt,var,n_cores = 4,...){
     # 
     
     #out <- EWSmethods::FI(x[,c("time",names(x)[grepl("spp_",names(x))]),with =FALSE],sost = sost,winsize=50)
-    out <- FI(as.data.frame(x[,c("time",names(x)[grepl("spp_",names(x))]),with =FALSE]),sost = sost,...)
+    out <- FI(as.data.frame(x[,c("time",sampl_spp),with =FALSE]),sost = sost,...)
     out <- data.frame("var" = x[,var,with=F][1],out$FI)
     names(out) <- c(var,"time","FI")
     

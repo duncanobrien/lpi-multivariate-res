@@ -46,6 +46,22 @@ lpi_summary_long <- copy(lpi_raw_dt) %>%
     tot_max_len = max(ts_len),
     to_min_len = min(ts_len))]
 
+lpi_summary_long15 <- copy(lpi_raw_dt) %>%
+  .[,.(ts_len = length(Year),
+       mean_val = mean(Value),
+       year_range = paste(min(Year),max(Year),sep = "-")),
+    by=c("ID","Binomial","System")] %>% #summarise total ts length, mean value and year range per ID
+  .[ts_len >= 15,] %>%
+  .[,`:=`(
+    system_mean_len = mean(ts_len),
+    system_max_len = max(ts_len),
+    system_min_len = min(ts_len)
+  ),by="System"] %>% #summarise total ts length per system
+  .[,`:=`(
+    tot_mean_len = mean(ts_len),
+    tot_max_len = max(ts_len),
+    to_min_len = min(ts_len))]
+
 hist(tot_summary_lpi$ts_len)
 quantile(tot_summary_lpi$ts_len,c(0.05,0.25,0.5,0.75,0.95))
 
