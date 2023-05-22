@@ -120,7 +120,8 @@ function extract_ts_for_csv(container::AbstractDict, label::String, trim::UnitRa
     out_df = DataFrames.DataFrame(Tables.table(container["1"]["1"][:sol][trim,:])) # if first iteration, create Dataframe
     transform!(out_df, names(out_df) .=> ByRow(x -> round(x,digits=round_digits)) .=>  names(out_df)) #round values to digits specified in argument 
     out_df.max_stress .= container["1"]["1"][:par][:ctrl]
-    out_df.target_spp .= container["1"]["1"][:par][:spp]
+    #out_df.target_spp .= container["1"]["1"][:par][:spp]
+    out_df.target_spp .= join(container["1"]["1"][:par][:spp],"_")
 
     out_df.community .= "1"
     out_df.sim .= "1"
@@ -131,7 +132,8 @@ function extract_ts_for_csv(container::AbstractDict, label::String, trim::UnitRa
                 temp = DataFrames.DataFrame(Tables.table(container[i][j][:sol][trim,:]))
                 transform!(temp, names(temp) .=> ByRow(x -> round(x,digits=round_digits)) .=>  names(temp))
                 temp.max_stress .= container[i][j][:par][:ctrl]
-                temp.target_spp .= container[i][j][:par][:spp]
+                #temp.target_spp .= container[i][j][:par][:spp]
+                temp.target_spp .= join(container[i][j][:par][:spp],"_")
 
                 temp.community .= i
                 temp.sim .= j
