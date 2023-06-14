@@ -21,7 +21,7 @@ ts_len = seq(10,70,15)
 #num_spp = 5
 #num_spps = seq(5,25,5)
 num_spps = c(5,15,25)
-model = "harvest"
+model = "invasive"
 #search_effort = 0.95
 search_effort = seq(0.1,1.0,0.1)
 model = c("harvest","invasive")
@@ -36,11 +36,17 @@ parameter_space <- expand.grid("motif" = motifs,
 #base::split(interaction(.$motif,.$num_spp,.$ts_len))
 base::split(interaction(.$motif,.$num_spp,.$model))
 
+sample_id <- expand.grid("motif" = 1,
+                         "community" = 1:30,
+                         "sim" = 1:25) |>
+  dplyr::mutate(sample_id = paste(motif,community,sim,sep = "_")) |>
+  dplyr::select(sample_id) |> unlist() |> unname()
+
 
 i=1
-motif_data <- parameter_space[[5]]
+motif_data <- parameter_space[[6]]
 
-lapply(list(parameter_space[[2]]), function(motif_data){
+lapply(parameter_space, function(motif_data){
   
   motif = unique(motif_data$motif)
   num_spp =  unique(motif_data$num_spp)
@@ -91,7 +97,8 @@ lapply(list(parameter_space[[2]]), function(motif_data){
       merge(inflection_detection_stress,by="sim_id") %>%
       .[,first_neg := min(ifelse(apply(.SD, 1,min) < 0 , time, max(time))),.SDcols = grep("^spp_",names(.)), by = "sim_id"] %>% #due to erroneous negative values from simulation solver, must crop prior to first negative value
       .[.[,.I[time < first_neg], by = "sim_id"]$V1] %>% #filter prior to first negative value 
-      .[,first_neg:=NULL]
+      .[,first_neg:=NULL] %>%
+      .[sim_id %in% sample_id,]
     
     rm(inflection_detection_stress) #remove object to release memory 
     
@@ -106,7 +113,8 @@ lapply(list(parameter_space[[2]]), function(motif_data){
       .[.[,.I[time < first_neg], by = "sim_id"]$V1] %>% #filter prior to first negative value 
       .[,first_neg:=NULL] %>% 
       .[,inflection_pt_incr := max(time), by = "sim_id"] %>% #as no stress, set inflection point to last time point for downstreaming processing
-      .[,inflection_pt_decr :=  max(time), by = "sim_id"] 
+      .[,inflection_pt_decr :=  max(time), by = "sim_id"] %>%
+      .[sim_id %in% sample_id,]
     
     rm(raw_stress_data,raw_unstressed_data) #remove object to release memory 
     
@@ -184,7 +192,7 @@ lapply(list(parameter_space[[2]]), function(motif_data){
     .[,motif := motif] %>%
     .[,n_spp := num_spp]
   
-  resilience_summary_data <- copy(resilience_models) %>%
+  resilience_summary_data <- resilience_models %>%
     melt(.,measure.vars = c("multiJI",names(.)[grep("^uniJI_",names(.))],"mean_uniJI","max_uniJI","FI","mvi"),
          variable.name = "metric",value.name = "metric_value") %>% #pivot resilience metrics longer
     .[,trend :=  tryCatch(cor.test(time, metric_value, alternative = c("two.sided"), method = c("kendall"), conf.level = 0.95,na.action = na.omit)$estimate,error = function(err){NA}),
