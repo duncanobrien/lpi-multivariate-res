@@ -1,0 +1,89 @@
+"n_spp","metric","Parameter","Median","CI_low","CI_high","kld"
+15,"multiJI","Fixed effects",NA,NA,NA,NA
+NA,NA,"(Intercept)","1.429","1.342","1.515","0"
+NA,NA,"stand_time","0.345","0.266","0.424","0"
+NA,NA,"stressed1","0.057","0.023","0.091","0"
+NA,NA,"ts_length","-1.342","-1.384","-1.299","0"
+NA,NA,"search_effort","0.005","-0.034","0.043","0"
+NA,NA,"stand_time:stressed1","-0.201","-0.313","-0.088","0"
+NA,NA,"stand_time:ts_length","-0.628","-0.787","-0.469","0"
+NA,NA,"stressed1:ts_length","-0.005","-0.066","0.056","0"
+NA,NA,"stand_time:search_effort","-0.231","-0.359","-0.104","0"
+NA,NA,"stressed1:search_effort","0.001","-0.054","0.056","0"
+NA,NA,"ts_length:search_effort","0.285","0.216","0.354","0"
+NA,NA,"stand_time:stressed1:ts_length","0.622","0.396","0.848","0"
+NA,NA,"stand_time:stressed1:search_effort","0.246","0.065","0.427","0"
+NA,NA,"stand_time:ts_length:search_effort","0.402","0.146","0.658","0"
+NA,NA,"stressed1:ts_length:search_effort","0.105","0.007","0.203","0"
+NA,NA,"stand_time:stressed1:ts_length:search_effort","-0.564","-0.926","-0.202","0"
+NA,NA,"Random effects",NA,NA,NA,NA
+NA,NA,"Precision for comm_id","18.493","18.393","18.656",NA
+NA,NA,"Precision for ar_id","0.555","0.555","0.557",NA
+NA,NA,"Precision for time","2.961","2.958","2.971",NA
+NA,NA,"PACF1 for time","-0.234","-0.235","-0.233",NA
+15,"mean_uniJI","Fixed effects",NA,NA,NA,NA
+NA,NA,"(Intercept)","0.472","0.434","0.509","0"
+NA,NA,"stand_time","-0.012","-0.017","-0.006","0"
+NA,NA,"stressed1","0.004","-0.002","0.01","0"
+NA,NA,"ts_length","-0.549","-0.557","-0.54","0"
+NA,NA,"search_effort","0","-0.007","0.007","0"
+NA,NA,"stand_time:stressed1","-0.009","-0.017","-0.001","0"
+NA,NA,"stand_time:ts_length","0.026","0.013","0.038","0"
+NA,NA,"stressed1:ts_length","0.038","0.025","0.05","0"
+NA,NA,"stand_time:search_effort","0.007","-0.002","0.015","0"
+NA,NA,"stressed1:search_effort","0.065","0.055","0.074","0"
+NA,NA,"ts_length:search_effort","0.472","0.458","0.486","0"
+NA,NA,"stand_time:stressed1:ts_length","0.158","0.141","0.176","0"
+NA,NA,"stand_time:stressed1:search_effort","0.002","-0.011","0.015","0"
+NA,NA,"stand_time:ts_length:search_effort","-0.02","-0.04","0","0"
+NA,NA,"stressed1:ts_length:search_effort","-0.06","-0.08","-0.039","0"
+NA,NA,"stand_time:stressed1:ts_length:search_effort","0.047","0.019","0.076","0"
+NA,NA,"Random effects",NA,NA,NA,NA
+NA,NA,"Precision for comm_id","141.64","67.039","509.741",NA
+NA,NA,"Precision for ar_id","124.35","123.187","126.082",NA
+NA,NA,"Precision for time","149.715","148.564","150.88",NA
+NA,NA,"PACF1 for time","0.968","0.968","0.968",NA
+15,"FI","Fixed effects",NA,NA,NA,NA
+NA,NA,"(Intercept)","1.38","1.312","1.447","0"
+NA,NA,"stand_time","0.02","-0.016","0.056","0"
+NA,NA,"stressed1","0.729","0.669","0.79","0"
+NA,NA,"ts_length","-1.2","-1.287","-1.113","0"
+NA,NA,"search_effort","0.043","-0.026","0.111","0"
+NA,NA,"stand_time:stressed1","-0.089","-0.141","-0.038","0"
+NA,NA,"stand_time:ts_length","-0.033","-0.118","0.052","0"
+NA,NA,"stressed1:ts_length","2.168","2.044","2.292","0"
+NA,NA,"stand_time:search_effort","-0.027","-0.085","0.031","0"
+NA,NA,"stressed1:search_effort","-0.091","-0.189","0.006","0"
+NA,NA,"ts_length:search_effort","-0.14","-0.281","0.001","0"
+NA,NA,"stand_time:stressed1:ts_length","-1.061","-1.181","-0.941","0"
+NA,NA,"stand_time:stressed1:search_effort","0.053","-0.03","0.136","0"
+NA,NA,"stand_time:ts_length:search_effort","0.053","-0.084","0.189","0"
+NA,NA,"stressed1:ts_length:search_effort","0.545","0.345","0.745","0"
+NA,NA,"stand_time:stressed1:ts_length:search_effort","-0.552","-0.746","-0.359","0"
+NA,NA,"Random effects",NA,NA,NA,NA
+NA,NA,"Precision for comm_id","45.105","39.667","48.576",NA
+NA,NA,"Precision for ar_id","38.088","36.452","41.233",NA
+NA,NA,"Precision for time","1.637","1.624","1.645",NA
+NA,NA,"PACF1 for time","0.971","0.971","0.972",NA
+15,"mvi","Fixed effects",NA,NA,NA,NA
+NA,NA,"(Intercept)","3.03","2.977","3.083","0"
+NA,NA,"stand_time","0.006","-0.01","0.022","0"
+NA,NA,"stressed1","0.142","0.121","0.164","0"
+NA,NA,"ts_length","-0.246","-0.277","-0.214","0"
+NA,NA,"search_effort","1.843","1.819","1.867","0"
+NA,NA,"stand_time:stressed1","-0.036","-0.06","-0.013","0"
+NA,NA,"stand_time:ts_length","-0.013","-0.049","0.024","0"
+NA,NA,"stressed1:ts_length","-0.067","-0.112","-0.022","0"
+NA,NA,"stand_time:search_effort","0","-0.026","0.027","0"
+NA,NA,"stressed1:search_effort","0.089","0.054","0.123","0"
+NA,NA,"ts_length:search_effort","0.117","0.066","0.167","0"
+NA,NA,"stand_time:stressed1:ts_length","0.644","0.592","0.696","0"
+NA,NA,"stand_time:stressed1:search_effort","0.012","-0.025","0.049","0"
+NA,NA,"stand_time:ts_length:search_effort","0.001","-0.058","0.06","0"
+NA,NA,"stressed1:ts_length:search_effort","-0.06","-0.132","0.012","0"
+NA,NA,"stand_time:stressed1:ts_length:search_effort","0.214","0.13","0.297","0"
+NA,NA,"Random effects",NA,NA,NA,NA
+NA,NA,"Precision for comm_id","49.938","49.77","50.19",NA
+NA,NA,"Precision for ar_id","12.306","12.272","12.353",NA
+NA,NA,"Precision for time","11.586","11.566","11.599",NA
+NA,NA,"PACF1 for time","0.985","0.985","0.985",NA
