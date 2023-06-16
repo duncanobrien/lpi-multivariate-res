@@ -134,6 +134,9 @@ summary_range2 <- summary_post2 |>
 #######################
 # Save posteriors
 #######################
+saveRDS(inla_success1,"Results/models/motif1_threshold_multiJI.rds")
+saveRDS(inla_success2,"Results/models/motif1_threshold_uniJI.rds")
+
 save(summary_post1,summary_post2,
      file = "Results/models/motif1_threshold_posteriors.RData")
 

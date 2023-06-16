@@ -1,16 +1,3 @@
-# source("/Users/ul20791/Desktop/Academia/PhD/Repositories/EWSmethods/EWSmethods/R/uni_smap_jacobian.R")
-# source("/Users/ul20791/Desktop/Academia/PhD/Repositories/EWSmethods/EWSmethods/R/uni_smapJI.R")
-# 
-# source("/Users/ul20791/Desktop/Academia/PhD/Repositories/EWSmethods/EWSmethods/R/mvi.R")
-# 
-# source("/Users/ul20791/Desktop/Academia/PhD/Repositories/EWSmethods/EWSmethods/R/GFisher.R")
-# source("/Users/ul20791/Desktop/Academia/PhD/Repositories/EWSmethods/EWSmethods/R/NFisherpdf.R")
-# source("/Users/ul20791/Desktop/Academia/PhD/Repositories/EWSmethods/EWSmethods/R/roundTO.R")
-# 
-# source("/Users/ul20791/Desktop/Academia/PhD/Repositories/EWSmethods/EWSmethods/R/smapJ_index.R")
-# source("/Users/ul20791/Desktop/Academia/PhD/Repositories/EWSmethods/EWSmethods/R/smap_jacobian.R")
-
-
 
 parallel_multiJI <- function(dt,var,n_cores = 4,sample_spp = TRUE,winsize = 50,...){
   
@@ -19,18 +6,11 @@ parallel_multiJI <- function(dt,var,n_cores = 4,sample_spp = TRUE,winsize = 50,.
   require(progressr)
   require(doRNG)
   
-  # doFuture::registerDoFuture()  ## %dopar% parallelizes via future
-  # future::plan(multisession, workers = n_cores)     ## forked parallel processing (via 'parallel')
-  # progressr::handlers(global = TRUE)
-  # progressr::handlers("cli")
   cl <- parallel::makeCluster(n_cores)
   doParallel::registerDoParallel(cl)
   
   dt2 <- split(dt,by = var)
-  #pb <- progressr::progressor(steps = length(dt2))
-  
-  #dt2 <- readRDS("/Users/ul20791/Downloads/test.rds")
-  #dt2 <- foreach::foreach(x = dt2,.packages=c("data.table"),.export = c("multi_smap_jacobian","smap_jacobian_est","multiJI"),.errorhandling = "remove") %dorng% {
+
   dt2 <- foreach::foreach(x = dt2,.packages=c("data.table","EWSmethods"),.errorhandling = "remove") %dorng% {
       
     if(NROW(x) < 10){ #10 is the minimum viable time series
@@ -42,7 +22,7 @@ parallel_multiJI <- function(dt,var,n_cores = 4,sample_spp = TRUE,winsize = 50,.
       
       #sum(x[[j]] == as.numeric(names(sort(table(x[[j]]),decreasing = T)[1])))< (window-1)
       
-      ts_check <- sapply(spp_col,FUN = function(j){length(unique(x[[j]])) == 1 |  (sum(as.numeric(base::table(x[[j]]) == 1)) == 1 & length(unique(x[[j]])) == 2) | any(rle(x[[j]])$lengths >= window)})
+      ts_check <- sapply(spp_col,FUN = function(j){length(unique(x[[j]])) == 1 |  (sum(as.numeric(base::table(x[[j]]) %in% c(1,2))) == 1 & length(unique(x[[j]])) == 2) | any(rle(x[[j]])$lengths >= (window-3))})
       spp_col <- spp_col[!ts_check]
       n_spp_ts <- length(spp_col)
       
@@ -64,8 +44,10 @@ parallel_multiJI <- function(dt,var,n_cores = 4,sample_spp = TRUE,winsize = 50,.
           out <- tryCatch(EWSmethods::multiJI(data = na.omit(as.data.frame(x[,c("time",sampl_spp),with =FALSE])),winsize = winsize, scale = T),
                                            error = function(err){return(cbind(time = seq(dim(x)[1] * winsize/100,dim(x)[1]),multiJI = NA))})
         }
-      }else if(n_spp_ts < 3){
-        out <- data.frame(seq(10 * winsize/100,10),NA)
+      # }else if(n_spp_ts < 3){
+      #   out <- data.frame(seq(10 * winsize/100,10),NA)
+        }else if(n_spp_ts < 2){
+          out <- data.frame(seq(10 * winsize/100,10),NA)
       }else{
         out <- tryCatch(EWSmethods::multiJI(data = na.omit(as.data.frame(x[,c("time",spp_col),with =FALSE])),winsize = winsize, scale = T),
                         error = function(err){return(cbind(time = seq(dim(x)[1] * winsize/100,dim(x)[1]),multiJI = NA))})
@@ -79,9 +61,7 @@ parallel_multiJI <- function(dt,var,n_cores = 4,sample_spp = TRUE,winsize = 50,.
     return(out)
   }
   print("\u2713 multiJI")
-  #closeAllConnections()
   parallel::stopCluster(cl)
-  #future::plan(sequential)
   return(data.table::rbindlist(dt2))
 }
 

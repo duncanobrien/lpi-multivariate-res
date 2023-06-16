@@ -60,15 +60,17 @@ inla_data_25_1 <- subset(resilience_25_data,metric == "multiJI") |>
   dplyr::mutate(stressed = paste(stressed),
                 ar_id_numeric = as.numeric(as.factor(ar_id))) 
 
+#Zcomm_sim <- as(model.matrix( ~ 0 + comm_id:sim_id, data = inla_data_25_1), "Matrix") #unable to fit nested effect due to memory limitations
+
 #fit model
 inla_25_1 <- inla(metric_value ~ stand_time*stressed*ts_length*search_effort 
                   +
                     f(comm_id, model = "iid",
-                      hyper = list(prec = list(prior = "logtnormal",
-                                               param = c(0, 1))))  #random intercept for shared communities
-                  +f(ar_id,stand_time, model = "iid",
-                     hyper =list(prec = list(prior = "logtnormal",
-                                             param = c(0, 1))))  #random slopes per simulation
+                      hyper = list(prec = list(prior = "loggamma",
+                                               param = c(0.01, 0.01))))  #random intercept for shared communities
+                  +f(sim_id,stand_time, model = "iid",
+                     hyper =list(prec = list(prior = "loggamma",
+                                             param = c(0.01, 0.01))))  #random slopes per simulation
                   +f(time, model = "ar",order = 1,replicate = ar_id_numeric,
                      hyper = list(prec = list(prior = "pc.prec",
                                               param = c(0.1,0.01)),
