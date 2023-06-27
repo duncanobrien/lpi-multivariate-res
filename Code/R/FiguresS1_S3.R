@@ -1,3 +1,5 @@
+#Figures S1-S3
+
 require(data.table)
 require(magrittr)
 require(dplyr)
@@ -56,7 +58,7 @@ figure_data <- rbind(resilience_5_data,resilience_15_data,resilience_25_data) %>
   .[,stand_time := scales::rescale(time),
     by = c("ar_id","metric","n_spp")] %>% #rescale time for comparability between 0-1
   .[,stressed := paste(stressed)] %>% #convert to factor
-  .[,sim_id := paste0(unlist(strsplit(sim_id, "_", fixed=TRUE))[2:3],collapse = "_")] #trim shared motif suffix
+  .[,sim_id := paste0(unlist(strsplit(sim_id, "_", fixed=TRUE))[2:3],collapse = "_"), by= sim_id] #trim shared motif suffix
 
 #######################
 # Create Figure S1
