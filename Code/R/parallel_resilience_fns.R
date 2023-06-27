@@ -2,8 +2,6 @@
 parallel_multiJI <- function(dt,var,n_cores = 4,sample_spp = TRUE,winsize = 50,...){
   
   require(foreach)
-  require(doFuture)
-  require(progressr)
   require(doRNG)
   
   cl <- parallel::makeCluster(n_cores)
@@ -68,9 +66,7 @@ parallel_multiJI <- function(dt,var,n_cores = 4,sample_spp = TRUE,winsize = 50,.
 parallel_uniJI <- function(dt,var,n_cores = 4,winsize = winsize, tau = 1 , E = 1){
   
   require(foreach)
-  require(doFuture)
-  require(progressr)
-  
+
   # doFuture::registerDoFuture()  ## %dopar% parallelizes via future
   # future::plan(multisession, workers = n_cores)     ## forked parallel processing (via 'parallel')
   # 
@@ -140,9 +136,7 @@ parallel_uniJI <- function(dt,var,n_cores = 4,winsize = winsize, tau = 1 , E = 1
 parallel_FI <- function(dt,var,n_cores = 4,winsize = 50, TL = 90){
   
   require(foreach)
-  require(doFuture)
-  require(progressr)
-  
+
   # doFuture::registerDoFuture()  ## %dopar% parallelizes via future
   # future::plan(multisession, workers = n_cores)     ## forked parallel processing (via 'parallel')
   # 
@@ -197,8 +191,6 @@ parallel_FI <- function(dt,var,n_cores = 4,winsize = 50, TL = 90){
 parallel_mvi <- function(dt,var,n_cores = 4,winsize = 50,...){
   
   require(foreach)
-  require(doFuture)
-  require(progressr)
   
   # doFuture::registerDoFuture()  ## %dopar% parallelizes via future
   # future::plan(multisession, workers = n_cores)     ## forked parallel processing (via 'parallel')

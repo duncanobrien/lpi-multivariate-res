@@ -53,7 +53,7 @@ resilience_25_data <- as.data.table(readRDS("Data/resilience/full/motif1_25_inva
   as.data.frame()
 
 #######################
-# 5 spp multiJI
+# 25 spp multiJI
 #######################
 
 inla_data_25_1 <- subset(resilience_25_data,metric == "multiJI") |>
@@ -66,11 +66,11 @@ inla_data_25_1 <- subset(resilience_25_data,metric == "multiJI") |>
 inla_25_1 <- inla(metric_value ~ stand_time*stressed*ts_length*search_effort 
                   +
                     f(comm_id, model = "iid",
-                      hyper = list(prec = list(prior = "loggamma",
-                                               param = c(0.01, 0.01))))  #random intercept for shared communities
-                  +f(sim_id,stand_time, model = "iid",
-                     hyper =list(prec = list(prior = "loggamma",
-                                             param = c(0.01, 0.01))))  #random slopes per simulation
+                      hyper = list(prec = list(prior = "logtnormal",
+                                               param = c(0, 1))))  #random intercept for shared communities
+                  +f(ar_id,stand_time, model = "iid",
+                     hyper =list(prec = list(prior = "logtnormal",
+                                             param = c(0, 1))))  #random slopes per simulation
                   +f(time, model = "ar",order = 1,replicate = ar_id_numeric,
                      hyper = list(prec = list(prior = "pc.prec",
                                               param = c(0.1,0.01)),
@@ -123,7 +123,7 @@ ggplot(slope_range_25_1,aes(y = .value, x = search_effort,group = stressed)) +
   scale_color_manual(values = c("#67705F","#E3A59F"),name = "Presence\nof stress",labels = c("No","Yes"),guide = "none")+
   scale_fill_manual(values = c("#67705F","#E3A59F"),name = "Presence\nof stress",labels = c("No","Yes"))+
   facet_wrap(~ts_length)+
-  coord_cartesian(ylim = c(-0.2,0.35))+
+  #coord_cartesian(ylim = c(-0.2,0.35))+
   xlab("Search effort") +
   ylab("Trend estimate") + 
   theme_bw()
@@ -348,7 +348,7 @@ ggplot(slope_range_25_4,aes(y = .value, x = search_effort,group = stressed)) +
 saveRDS(inla_25_4,"Results/models/motif1_25_invasive_MVI_model.rds")
 
 #######################
-# Save 15 spp slopes
+# Save 25 spp slopes
 #######################
 save(slope_post_25_1,slope_post_25_2,slope_post_25_3,slope_post_25_4,
      file = "Results/models/motif1_25_invasive_slope_posteriors.RData")

@@ -44,7 +44,7 @@ sample_id <- expand.grid("motif" = 1,
 
 
 i=1
-motif_data <- parameter_space[[6]]
+motif_data <- parameter_space[[3]]
 
 lapply(parameter_space, function(motif_data){
   
@@ -135,18 +135,14 @@ lapply(parameter_space, function(motif_data){
         .[,grep("^spp_",names(.)) := lapply(.SD, function(x){rbinom(length(x), x, search_effort)}), .SDcols = grep("^spp_",names(.)), by = "sim_id"] %>% #introduce sampling error
         .[.[, .I[time %in% (round(unique(get(inflec_col)))-ts_len+1):round(unique(get(inflec_col)))], by = "sim_id"]$V1] #conditionally filter (by ts_len) by simulation identifier
       
-      #aa <- copy(tmp_stress_csv)
-      #bb <- parallel_multiJI(copy(tmp_stress_csv), var = "sim_id",n_cores = 7,sample_spp = TRUE, winsize = winsize,scale = TRUE)
-      #cc <- parallel_uniJI(copy(tmp_stress_csv), var = "sim_id",n_cores = 7,winsize = winsize,scale = TRUE,E = 1,tau = round(ts_len*-0.1))
-      
       out_stress_csv <- merge(copy(tmp_stress_csv),parallel_multiJI(copy(tmp_stress_csv), var = "sim_id",n_cores = 9,sample_spp = TRUE, winsize = winsize),
-                              by =c("time","sim_id")) %>% #calculate each resilience metric for the stressed models
+                              by =c("time","sim_id"),all = TRUE) %>% #calculate each resilience metric for the stressed models
         merge(.,parallel_uniJI(copy(tmp_stress_csv), var = "sim_id",n_cores = 9,winsize = winsize,E = 1,tau = round(ts_len*-0.1)),
-              by =c("time","sim_id")) %>%
+              by =c("time","sim_id"),all = TRUE) %>%
         merge(.,parallel_FI(copy(tmp_stress_csv), var = "sim_id",n_cores = 9,winsize = winsize,TL=75),
-              by =c("time","sim_id")) %>%
+              by =c("time","sim_id"),all = TRUE) %>%
         merge(.,parallel_mvi(copy(tmp_stress_csv), var = "sim_id",n_cores = 9,winsize = winsize),
-              by =c("time","sim_id")) %>%
+              by =c("time","sim_id"),all = TRUE) %>%
         .[,c("sim_id",names(.)[grep("^spp_",names(.))],"target_node",
              "time","jac_collapse","inflection_pt_incr","inflection_pt_decr",
              "multiJI",names(.)[grep("^uniJI_",names(.))],"mean_uniJI","max_uniJI","FI","mvi"),with = FALSE] %>% #select columns of interest
@@ -163,13 +159,13 @@ lapply(parameter_space, function(motif_data){
       #.[time >= max(time)-ts_len+1,] %>% #stress begins at t100 but we crop here to representative lengths of LPI
       
       out_unstressed_csv <- merge(copy(tmp_unstressed_csv),parallel_multiJI(copy(tmp_unstressed_csv), var = "sim_id",n_cores =9,sample_spp = TRUE,winsize = winsize),
-                                  by =c("time","sim_id")) %>% #calculate each resilience metric for the stressed models
+                                  by =c("time","sim_id"),all = TRUE) %>% #calculate each resilience metric for the stressed models
         merge(.,parallel_uniJI(copy(tmp_unstressed_csv), var = "sim_id",n_cores = 9,winsize = winsize,E = 1,tau = round(ts_len*-0.1)),
-              by =c("time","sim_id")) %>%
+              by =c("time","sim_id"),all = TRUE) %>%
         merge(.,parallel_FI(copy(tmp_unstressed_csv), var = "sim_id",n_cores = 9,winsize = winsize),
-              by =c("time","sim_id")) %>%
+              by =c("time","sim_id"),all = TRUE) %>%
         merge(.,parallel_mvi(copy(tmp_unstressed_csv), var = "sim_id",n_cores = 9,winsize = winsize),
-              by =c("time","sim_id")) %>%
+              by =c("time","sim_id"),all = TRUE) %>%
         .[,c("sim_id",names(.)[grep("^spp_",names(.))],"target_node",
              "time","jac_collapse","inflection_pt_incr","inflection_pt_decr",
              "multiJI",names(.)[grep("^uniJI_",names(.))],"mean_uniJI","max_uniJI","FI","mvi"),with = FALSE] %>% #select columns of interest
