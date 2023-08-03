@@ -18,6 +18,8 @@ using JLD2
 using Symbolics
 using DiffEqBase
 using ForwardDiff
+using DataFrames
+using DifferentialEquations
 include("./generalised_lotka_volterra_invasive.jl")
 include("./generalised_lotka_volterra_stochastic.jl")
 include("./extinction_event_callback.jl")

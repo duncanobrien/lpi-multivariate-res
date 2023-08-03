@@ -163,6 +163,8 @@ function motif_sim(motif::Vector{DictoVec{Any}}, u0,spp::Union{Vector, Matrix,St
         push!(parameters,:spp => spp) #or accept user provide species(s)
     end
 
+    parameters = (; parameters...) #convert Dict to NamedTuple
+
     extinction_event = VectorContinuousCallback(extinction!,extinction_affect!,length(noise)) #define extinction function depending on number of species
     
     if ismissing(u0) #if initial abundances not explicitly provided, copy from initial data
@@ -363,6 +365,8 @@ function invasive_sim(motif::Vector{DictoVec{}}, u0,spp::Union{Vector, Matrix,St
         push!(parameters,:spp => spp)
     end
    
+    parameters = (; parameters...) #convert Dict to NamedTuple
+
     extinction_event = VectorContinuousCallback(extinction!,extinction_affect!,length(noise))
     
     if ismissing(u0)

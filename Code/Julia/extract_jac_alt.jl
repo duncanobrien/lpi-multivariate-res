@@ -15,10 +15,12 @@ function critical_sys_harvest(control_range::StepRangeLen,odeproblem::ODEProblem
     temp_parameters = control_p
 
     for j in 1:(size(jac_vector)[1])
-        setindex!(temp_parameters,jac_vector[j,1] , :signal) #change stress parameter
-        #prob_temp = remake(odeproblem; p=temp_parameters)
-        prob_temp = remake(odeproblem; p= NamedTuple([pair for pair in temp_parameters])) #alter ODE with new parameter values
-        sol_temp = solve(prob_temp,Rosenbrock23())
+        #setindex!(temp_parameters,jac_vector[j,1] , :signal) #change stress parameter
+        temp_parameters = (temp_parameters..., signal=jac_vector[j,1])
+
+        prob_temp = remake(odeproblem; p=temp_parameters)
+        #prob_temp = remake(odeproblem; p= NamedTuple([pair for pair in temp_parameters])) #alter ODE with new parameter values
+        sol_temp = solve(prob_temp)
 
         jac = ForwardDiff.jacobian((du,u)->gen_lotka_volterra_harvest_remake!(du,u,temp_parameters,0.0),sol_temp.u[size(sol_temp.u)[1]], sol_temp.u[size(sol_temp.u)[1]])
 
@@ -55,8 +57,10 @@ function critical_sys_invasive(control_range::StepRangeLen,odeproblem::ODEProble
 
     for j in 1:(size(jac_vector)[1])
         setindex!(temp_parameters,jac_vector[j,1] , :signal) #change stress parameter
-        #prob_temp = remake(odeproblem; p=temp_parameters)
-        prob_temp = remake(odeproblem; p= NamedTuple([pair for pair in temp_parameters])) #alter ODE with new parameter values
+        temp_parameters = (temp_parameters..., signal=jac_vector[j,1])
+
+        prob_temp = remake(odeproblem; p=temp_parameters)
+        #prob_temp = remake(odeproblem; p= NamedTuple([pair for pair in temp_parameters])) #alter ODE with new parameter values
         sol_temp = solve(prob_temp)
 
         jac = ForwardDiff.jacobian((du,u)->gen_lotka_volterra_invasive_remake!(du,u,temp_parameters,0.0),sol_temp.u[size(sol_temp.u)[1]], sol_temp.u[size(sol_temp.u)[1]])
@@ -120,6 +124,7 @@ function extract_max_eigvec_alt(container,control_range::StepRangeLen, t::Int64,
         else
             push!(params_remake,:spp => spp)
         end
+        params_remake = (; params_remake...) #convert Dict to NamedTuple
 
         extinction_event = VectorContinuousCallback(extinction!,extinction_affect!,length(params_remake[:W]))
         gen_prob_remake = ODEProblem(gen_lotka_volterra_invasive_remake!, container[j]["Neq"], (0,t+200), params_remake,callback =  extinction_event)
