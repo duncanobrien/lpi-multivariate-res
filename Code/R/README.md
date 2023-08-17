@@ -10,7 +10,7 @@
 
 [*inla_threshold_models.R*] - fits hierachical logistic models to binary stability-instability signals of the Jacobian estimating resilience metrics.
 
-[*Figure1.R*](Figure1.R), [*Figure2.R*](Figure2.R), [*Figure3.R*](Figure3.R), [*Figure4.R*](Figure4.R), [*FiguresS1_S3.R*](FiguresS1_S3.R) & [*TablesS1_S18.R*](TablesS1_S18.R) - generate the main figures available [here](https://github.com/duncanobrien/lpi-multivariate-res/tree/main/Results/figures) and the [supplementary tables](https://github.com/duncanobrien/lpi-multivariate-res/tree/main/Results/figures/supplementary_tables).
+[*Figure1.R*](Figure1.R), [*Figure2.R*](Figure2.R), [*Figure3.R*](Figure3.R), [*Figure4.R*](Figure4.R), [*FiguresS1_S3.R*](FiguresS1_S3.R) & [*TablesS1_S18.R*](TableS1_S18.R) - generate the main figures available [here](https://github.com/duncanobrien/lpi-multivariate-res/tree/main/Results/figures) and the [supplementary tables](https://github.com/duncanobrien/lpi-multivariate-res/tree/main/Results/figures/supplementary_tables).
 
 ## Supporting functions
 All supporting functions are found within the [auxiliary_functions folder](https://github.com/duncanobrien/lpi-multivariate-res/tree/main/Code/R/auxiliary_functions)
