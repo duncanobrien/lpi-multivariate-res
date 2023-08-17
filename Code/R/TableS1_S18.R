@@ -4,7 +4,7 @@
 # models may have to be loaded and coefficients extracted individually depending on RAM
 require(dplyr)
 require(tibble)
-source("Code/R/coef_inla_fn.R")
+source("Code/R/auxiliary_functions/coef_inla_fn.R")
 
 ############ 
 # 5 spp models (Tables S1-S5)

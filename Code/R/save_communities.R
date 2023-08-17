@@ -9,7 +9,7 @@ load("Data/networks/template_motifs/adjacent_matrix_list_minimal.Rdata") #
 adjacent_matrix_key_minimal <- read.csv("Data/networks/template_motifs/adjacent_matrix_key_minimal.csv")
 #reference key for adjacent_matrix_list_minimal to reference against
 
-source("Code/R/A_matrix_fns.R")
+source("Code/R/auxiliary_functions/A_matrix_fns.R")
 
 ###################################
 ## Simulate 5 species communities

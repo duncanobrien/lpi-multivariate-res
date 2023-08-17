@@ -6,8 +6,8 @@ require(data.table)
 require(magrittr)
 require(dplyr)
 require(inflection)
-source("Code/R/parallel_resilience_fns.R")
-source("Code/R/julia_wrangle_function.R")
+source("Code/R/auxiliary_functions/parallel_resilience_fns.R")
+source("Code/R/auxiliary_functions/julia_wrangle_function.R")
 
 ################################################
 # Generate resilience data

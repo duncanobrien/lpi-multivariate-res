@@ -242,7 +242,7 @@ parallel_multiAR <- function(dt,var,n_cores = 4,sample_spp = TRUE,winsize = 50,.
   require(doFuture)
   require(progressr)
   require(doRNG)
-  source("Code/R/multiAR.R")
+  source("Code/R/auxiliary_functions/multiAR.R")
   
   cl <- parallel::makeCluster(n_cores)
   doParallel::registerDoParallel(cl)
