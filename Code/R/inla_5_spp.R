@@ -40,17 +40,17 @@ resilience_5_data <- as.data.table(readRDS("Data/resilience/full/motif1_5_invasi
   .[sim_id %in% sample_id,] %>%
   .[,comm_id := paste0(unlist(strsplit(sim_id, "_", fixed=TRUE))[1:2],collapse = "_"), 
     by = sim_id] %>% #find shared community id
-  .[,c("sim_id","comm_id","time","multiJI","mean_uniJI","FI","mvi","model","stressed","ts_length","search_effort","motif")] %>%
+  .[,c("sim_id","comm_id","time","multiJI","mean_uniJI","FI","mvi","multiAR","model","stressed","ts_length","search_effort","motif")] %>%
   #.[,mvi := log(mvi)] %>%
   .[,ar_id := paste(sim_id,model,stressed,ts_length,search_effort,sep = "_")] %>%
-  melt(.,measure.vars = c("multiJI","mean_uniJI","FI","mvi"),
+  melt(.,measure.vars = c("multiJI","mean_uniJI","FI","mvi","multiAR"),
        variable.name = "metric",value.name = "metric_value") %>% #pivot_loner
   .[,ts_length := ts_length/100] %>% #so on same scale as search_effort
   .[,stand_time := scales::rescale(time),
     by = c("ar_id","metric")] %>% #to prevent model extapolating ts_len 10 to length 70, ensure time is scaled
   # .[,metric_value := scale(metric_value),
   #   by = c("ts_length","search_effort","stressed","id","metric")] %>% #mvi and FI on different scale to JIs
-  as.data.frame()
+  as.data.frame() 
 
 #######################
 # 5 spp multiJI
@@ -58,7 +58,8 @@ resilience_5_data <- as.data.table(readRDS("Data/resilience/full/motif1_5_invasi
 
 inla_data_5_1 <- subset(resilience_5_data,metric == "multiJI") |>
   dplyr::mutate(stressed = paste(stressed),
-                ar_id_numeric = as.numeric(as.factor(ar_id))) 
+                ar_id_numeric = as.numeric(as.factor(ar_id))) |>
+  na.omit()
 
 #fit model
 inla_5_1 <- inla(metric_value ~ stand_time*stressed*ts_length*search_effort 
@@ -69,17 +70,14 @@ inla_5_1 <- inla(metric_value ~ stand_time*stressed*ts_length*search_effort
              +f(ar_id,stand_time, model = "iid",
                 hyper =list(prec = list(prior = "logtnormal",
                                         param = c(0, 1))))  #random slopes per simulation
-             +f(time, model = "ar",order = 1,replicate = ar_id_numeric,
-                hyper = list(prec = list(prior = "pc.prec",
-                                         param = c(0.1,0.01)),
-                             pacf1 = list(prior = "pc.cor1",
-                                          param=c(0.9, 0.9)))) #autocorrelation term
+             +f(time, model = "ar",order = 1,replicate = ar_id_numeric) #autocorrelation term
              ,
              data = inla_data_5_1, 
              family = "gaussian",
              lincomb = lincomb,
              control.inla = list(
-               int.strategy = "eb"
+               int.strategy = "eb",
+               force.diagonal = T
              ),
              num.threads = 5,
              control.predictor=list(compute=TRUE),
@@ -134,7 +132,8 @@ saveRDS(inla_5_1,"Results/models/motif1_5_invasive_multiJI_model.rds")
 
 inla_data_5_2 <-  subset(resilience_5_data,metric == "mean_uniJI" ) |>
   dplyr::mutate(stressed = paste(stressed),
-                ar_id_numeric = as.numeric(as.factor(ar_id))) 
+                ar_id_numeric = as.numeric(as.factor(ar_id))) |>
+  na.omit()
 
 inla_5_2 <- inla(metric_value ~ stand_time*stressed*ts_length*search_effort 
               +
@@ -144,16 +143,13 @@ inla_5_2 <- inla(metric_value ~ stand_time*stressed*ts_length*search_effort
                 f(ar_id,stand_time, model = "iid",
                   hyper = list(prec = list(prior = "logtnormal",
                                            param = c(0, 1)))) 
-              +f(time, model = "ar",order = 1,replicate = ar_id_numeric,
-                 hyper = list(prec = list(prior = "pc.prec",
-                                          param = c(0.1,0.01)),
-                              pacf1 = list(prior = "pc.cor1",
-                                           param=c(0.9, 0.9)))) #autocorrelation term
+              +f(time, model = "ar",order = 1,replicate = ar_id_numeric) #autocorrelation term
               ,
               data = inla_data_5_2, 
               family = "gaussian",
               lincomb = lincomb,
-              control.inla = list(int.strategy = "eb"),
+              control.inla = list(int.strategy = "eb",
+                                  force.diagonal = T),
               num.threads = 5,
               control.predictor=list(compute=TRUE),
               control.compute = list(config = TRUE,cpo = F),
@@ -206,7 +202,8 @@ saveRDS(inla_5_2,"Results/models/motif1_5_invasive_uniJI_model.rds")
 
 inla_data_5_3 <-  subset(resilience_5_data,metric == "FI") |>
   dplyr::mutate(stressed = paste(stressed),
-                ar_id_numeric = as.numeric(as.factor(ar_id))) 
+                ar_id_numeric = as.numeric(as.factor(ar_id))) |>
+  na.omit()
 
 inla_5_3 <- inla(metric_value ~ stand_time*stressed*ts_length*search_effort 
               +
@@ -216,16 +213,13 @@ inla_5_3 <- inla(metric_value ~ stand_time*stressed*ts_length*search_effort
                 f(ar_id,stand_time, model = "iid",
                   hyper =  list(prec = list(prior = "logtnormal",
                                             param = c(0, 1)))) 
-              +f(time, model = "ar",order = 1,replicate = ar_id_numeric,
-                 hyper = list(prec = list(prior = "pc.prec",
-                                          param = c(0.1,0.01)),
-                              pacf1 = list(prior = "pc.cor1",
-                                           param=c(0.9, 0.9)))) #autocorrelation term
+              +f(time, model = "ar",order = 1,replicate = ar_id_numeric) #autocorrelation term
               ,
               data = inla_data_5_3, 
               family = "gaussian",
               lincomb = lincomb,
-              control.inla = list(int.strategy = "eb"),
+              control.inla = list(int.strategy = "eb",
+                                  force.diagonal = T),
               num.threads = 5,
               control.predictor=list(compute=TRUE),
               control.compute = list(config = TRUE,cpo = F),
@@ -279,7 +273,8 @@ saveRDS(inla_5_3,"Results/models/motif1_5_invasive_FI_model.rds")
 inla_data_5_4 <-  subset(resilience_5_data,metric == "mvi") |>
   dplyr::mutate(stressed = paste(stressed),
                 ar_id_numeric = as.numeric(as.factor(ar_id))) |>
-  dplyr::mutate(metric_value = log(metric_value)) 
+  dplyr::mutate(metric_value = log(metric_value)) |>
+  na.omit()
 
 inla_5_4 <- inla(metric_value ~ stand_time*stressed*ts_length*search_effort 
               +
@@ -289,16 +284,13 @@ inla_5_4 <- inla(metric_value ~ stand_time*stressed*ts_length*search_effort
                 f(ar_id,stand_time, model = "iid",
                   hyper = list(prec = list(prior = "logtnormal",
                                            param = c(0, 1)))) 
-              +f(time, model = "ar",order = 1,replicate = ar_id_numeric,
-                 hyper = list(prec = list(prior = "pc.prec",
-                                          param = c(0.1,0.01)),
-                              pacf1 = list(prior = "pc.cor1",
-                                           param=c(0.9, 0.9)))) #autocorrelation term
+              +f(time, model = "ar",order = 1,replicate = ar_id_numeric) #autocorrelation term
               ,
               data = inla_data_5_4, 
               family = "gaussian",
               lincomb = lincomb,
-              control.inla = list(int.strategy = "eb"),
+              control.inla = list(int.strategy = "eb",
+                                  force.diagonal = T),
               num.threads = 5,
               control.predictor=list(compute=TRUE),
               control.compute = list(config = TRUE,cpo = F),
@@ -346,10 +338,80 @@ ggplot(slope_range_5_4,aes(y = .value, x = search_effort,group = stressed)) +
 saveRDS(inla_5_4,"Results/models/motif1_5_invasive_MVI_model.rds")
 
 #######################
+# 5 spp multiAR
+#######################
+
+inla_data_5_5 <-  subset(resilience_5_data,metric == "multiAR") |>
+  dplyr::mutate(stressed = paste(stressed),
+                ar_id_numeric = as.numeric(as.factor(ar_id))) |>
+  na.omit()
+
+inla_5_5 <- inla(metric_value ~ stand_time*stressed*ts_length*search_effort 
+                  +
+                    f(comm_id, model = "iid",
+                      hyper = list(prec = list(prior = "logtnormal",
+                                               param = c(0, 1)))) +
+                    f(ar_id,stand_time, model = "iid",
+                      hyper = list(prec = list(prior = "logtnormal",
+                                               param = c(0, 1)))) 
+                  +f(time, model = "ar",order = 1,replicate = ar_id_numeric) #autocorrelation term
+                  ,
+                  data = inla_data_5_5, 
+                  family = "gaussian",
+                  lincomb = lincomb,
+                  control.inla = list(int.strategy = "eb",
+                                      force.diagonal = T),
+                  num.threads = 5,
+                  control.predictor=list(compute=TRUE),
+                  control.compute = list(config = TRUE,cpo = F),
+                  control.fixed = prior.fixed)
+
+plot((1:nrow(na.omit(inla_data_5_5)))/(nrow(na.omit(inla_data_5_5)) +1), 
+     sort(na.omit(inla_5_5$cpo$pit)),
+     xlab="Uniform quantiles", ylab="Sorted PIT values")
+abline(0,1)
+any(na.omit(inla_data_5_5$cpo$failure)>=1)
+
+marg_5_5 <- inla_5_5$marginals.lincomb.derived[grepl("lc",names(inla_5_5$marginals.lincomb.derived))]
+groups_5_5 <- rep(1:(length(marg_5_5)/2),each = 2)
+marg_grouped_5_5 <- split(marg_5_5,groups_5_5)
+
+slope_post_5_5 <- lapply(marg_grouped_5_5,function(x){
+  data.frame(".draw" = 1:draws,
+             ".value" = inla.rmarginal(draws, x[[2]]) - 
+               inla.rmarginal(draws, x[[1]]))
+}) |>
+  data.table::rbindlist() |>
+  cbind(
+    subset(newdata,stand_time == 1)[,c("stressed","ts_length","search_effort")] |>
+      dplyr::slice(rep(1:dplyr::n(), each = draws))
+  ) |>
+  dplyr::mutate(ts_length = ts_length*100)
+
+slope_range_5_5 <- slope_post_5_5 |>
+  dplyr::group_by(stressed,ts_length,search_effort) |>
+  tidybayes::median_qi(.width = c(.95, .8, .5))
+
+ggplot(slope_range_5_5,aes(y = .value, x = search_effort,group = stressed)) +
+  geom_hline(yintercept = 0, linetype = "dashed", colour="grey50") +
+  tidybayes::stat_slab(data= slope_post_5_5, aes(fill=stressed,group = stressed),alpha=0.5,position = position_dodge(width=0.1)) +
+  tidybayes::geom_pointinterval(aes(ymin = .lower, ymax = .upper,col=stressed,),
+                                interval_size_range = c(0.8, 2),position = position_dodge(width=0.1)) +
+  scale_color_manual(values = c("#67705F","#E3A59F"),name = "Presence\nof stress",labels = c("No","Yes"),guide = "none")+
+  scale_fill_manual(values = c("#67705F","#E3A59F"),name = "Presence\nof stress",labels = c("No","Yes"))+
+  facet_wrap(~ts_length)+
+  coord_cartesian(ylim = c(-0.1,0.7))+
+  xlab("Search effort") +
+  ylab("Trend estimate") + 
+  theme_bw()
+
+saveRDS(inla_5_5,"Results/models/motif1_5_invasive_multiAR_model.rds")
+
+#######################
 # Save 5 spp slopes
 #######################
-save(slope_post_5_1,slope_post_5_2,slope_post_5_3,slope_post_5_4,
+save(slope_post_5_1,slope_post_5_2,slope_post_5_3,slope_post_5_4,slope_post_5_5,
      file = "Results/models/motif1_5_invasive_slope_posteriors.RData")
 
-save(slope_range_5_1,slope_range_5_2,slope_range_5_3,slope_range_5_4,
+save(slope_range_5_1,slope_range_5_2,slope_range_5_3,slope_range_5_4,slope_range_5_5,
      file = "Results/models/motif1_5_invasive_slope_ranges.RData")

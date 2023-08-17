@@ -44,7 +44,7 @@ sample_id <- expand.grid("motif" = 1,
 
 
 i=1
-motif_data <- parameter_space[[3]]
+motif_data <- parameter_space[[6]]
 
 lapply(parameter_space, function(motif_data){
   
@@ -63,7 +63,7 @@ lapply(parameter_space, function(motif_data){
     unstressed_path <- paste("Data/simulations/",num_spp,"_spp/",model,"/unstressed/",sep="") #define unstressed model path
     load_unstressed_files <- fs::dir_ls(path = unstressed_path, regexp = paste0(unstressed_path, "motif_.*\\.csv$"))
     
-    raw_stress_data <- as.data.table(vroom::vroom(load_stress_files[grepl(paste0("_",motif,"\\."),load_unstressed_files)],show_col_types = FALSE)) %>%
+    raw_stress_data <- as.data.table(vroom::vroom(load_stress_files[grepl(paste0("_",motif,"\\."),load_stress_files)],show_col_types = FALSE)) %>%
       dplyr::rename_with(~paste("spp",gsub("Column","",.x),sep = "_"),dplyr::starts_with("Column")) #load stressed models and rename species columns
     
     hypo_trans_data <- read.csv(fs::dir_ls(path = stress_path, regexp = paste0(stress_path, "jacobian.*\\.csv$"))) %>% #load stressed models' jacobian info
@@ -135,17 +135,19 @@ lapply(parameter_space, function(motif_data){
         .[,grep("^spp_",names(.)) := lapply(.SD, function(x){rbinom(length(x), x, search_effort)}), .SDcols = grep("^spp_",names(.)), by = "sim_id"] %>% #introduce sampling error
         .[.[, .I[time %in% (round(unique(get(inflec_col)))-ts_len+1):round(unique(get(inflec_col)))], by = "sim_id"]$V1] #conditionally filter (by ts_len) by simulation identifier
       
-      out_stress_csv <- merge(copy(tmp_stress_csv),parallel_multiJI(copy(tmp_stress_csv), var = "sim_id",n_cores = 9,sample_spp = TRUE, winsize = winsize),
-                              by =c("time","sim_id"),all = TRUE) %>% #calculate each resilience metric for the stressed models
+      out_stress_csv <- merge(copy(tmp_stress_csv),parallel_mvi(copy(tmp_stress_csv), var = "sim_id",n_cores = 9,winsize = winsize), #calculate each resilience metric for the stressed models
+                              by =c("time","sim_id")) %>% 
+        merge(.,parallel_multiJI(copy(tmp_stress_csv), var = "sim_id",n_cores = 9,sample_spp = TRUE, winsize = winsize),
+                              by =c("time","sim_id"),all.x = TRUE) %>% 
         merge(.,parallel_uniJI(copy(tmp_stress_csv), var = "sim_id",n_cores = 9,winsize = winsize,E = 1,tau = round(ts_len*-0.1)),
-              by =c("time","sim_id"),all = TRUE) %>%
+              by =c("time","sim_id"),all.x = TRUE) %>%
         merge(.,parallel_FI(copy(tmp_stress_csv), var = "sim_id",n_cores = 9,winsize = winsize,TL=75),
-              by =c("time","sim_id"),all = TRUE) %>%
-        merge(.,parallel_mvi(copy(tmp_stress_csv), var = "sim_id",n_cores = 9,winsize = winsize),
-              by =c("time","sim_id"),all = TRUE) %>%
+              by =c("time","sim_id"),all.x = TRUE) %>%
+        merge(.,parallel_multiAR(copy(tmp_stress_csv), var = "sim_id",n_cores = 9,winsize = winsize),
+              by =c("time","sim_id"),all.x = TRUE) %>%
         .[,c("sim_id",names(.)[grep("^spp_",names(.))],"target_node",
              "time","jac_collapse","inflection_pt_incr","inflection_pt_decr",
-             "multiJI",names(.)[grep("^uniJI_",names(.))],"mean_uniJI","max_uniJI","FI","mvi"),with = FALSE] %>% #select columns of interest
+             "multiJI",names(.)[grep("^uniJI_",names(.))],"mean_uniJI","max_uniJI","FI","mvi","multiAR"),with = FALSE] %>% #select columns of interest
         .[,model := model] %>% #add additional metadata
         .[,stressed := 1] %>%
         .[,ts_length := ts_len] %>%
@@ -158,17 +160,19 @@ lapply(parameter_space, function(motif_data){
         .[.[, .I[time %in% (round(unique(get(inflec_col)))-ts_len+1):round(unique(get(inflec_col)))], by = "sim_id"]$V1] #conditionally filter (by ts_len) by simulation identifier
       #.[time >= max(time)-ts_len+1,] %>% #stress begins at t100 but we crop here to representative lengths of LPI
       
-      out_unstressed_csv <- merge(copy(tmp_unstressed_csv),parallel_multiJI(copy(tmp_unstressed_csv), var = "sim_id",n_cores =9,sample_spp = TRUE,winsize = winsize),
-                                  by =c("time","sim_id"),all = TRUE) %>% #calculate each resilience metric for the stressed models
+      out_unstressed_csv <-  merge(copy(tmp_unstressed_csv),parallel_mvi(copy(tmp_unstressed_csv), var = "sim_id",n_cores = 9,winsize = winsize), #calculate each resilience metric for the unstressed models
+                                   by =c("time","sim_id")) %>%
+        merge(.,parallel_multiJI(copy(tmp_unstressed_csv), var = "sim_id",n_cores =9,sample_spp = TRUE,winsize = winsize),
+                                  by =c("time","sim_id"),all.x = TRUE) %>% 
         merge(.,parallel_uniJI(copy(tmp_unstressed_csv), var = "sim_id",n_cores = 9,winsize = winsize,E = 1,tau = round(ts_len*-0.1)),
-              by =c("time","sim_id"),all = TRUE) %>%
+              by =c("time","sim_id"),all.x = TRUE) %>%
         merge(.,parallel_FI(copy(tmp_unstressed_csv), var = "sim_id",n_cores = 9,winsize = winsize),
-              by =c("time","sim_id"),all = TRUE) %>%
-        merge(.,parallel_mvi(copy(tmp_unstressed_csv), var = "sim_id",n_cores = 9,winsize = winsize),
-              by =c("time","sim_id"),all = TRUE) %>%
+              by =c("time","sim_id"),all.x = TRUE) %>%
+        merge(.,parallel_multiAR(copy(tmp_unstressed_csv), var = "sim_id",n_cores = 9,winsize = winsize),
+              by =c("time","sim_id"),all.x = TRUE) %>%
         .[,c("sim_id",names(.)[grep("^spp_",names(.))],"target_node",
              "time","jac_collapse","inflection_pt_incr","inflection_pt_decr",
-             "multiJI",names(.)[grep("^uniJI_",names(.))],"mean_uniJI","max_uniJI","FI","mvi"),with = FALSE] %>% #select columns of interest
+             "multiJI",names(.)[grep("^uniJI_",names(.))],"mean_uniJI","max_uniJI","FI","mvi","multiAR"),with = FALSE] %>% #select columns of interest
         .[,model := model] %>% #add additional metadata
         .[,stressed := 0] %>%
         .[,ts_length := ts_len] %>%
@@ -189,14 +193,15 @@ lapply(parameter_space, function(motif_data){
     .[,n_spp := num_spp]
   
   resilience_summary_data <- resilience_models %>%
-    melt(.,measure.vars = c("multiJI",names(.)[grep("^uniJI_",names(.))],"mean_uniJI","max_uniJI","FI","mvi"),
+    melt(.,measure.vars = c("multiJI",names(.)[grep("^uniJI_",names(.))],"mean_uniJI","max_uniJI","FI","mvi","multiAR"),
          variable.name = "metric",value.name = "metric_value") %>% #pivot resilience metrics longer
-    .[,trend :=  tryCatch(cor.test(time, metric_value, alternative = c("two.sided"), method = c("kendall"), conf.level = 0.95,na.action = na.omit)$estimate,error = function(err){NA}),
+    .[,trend :=  tryCatch(cor.test(time, metric_value, alternative = c("two.sided"), method = c("kendall"), conf.level = 0.95,na.action = na.omit)$estimate,error = function(err){as.numeric(NA)}),
       by = c("ts_length","search_effort","sim_id","metric", "stressed","model")] %>% #estimate Kendall tau correlation through time
     .[,corrected_trend :=  ifelse(metric == "FI",trend*-1,trend), #as FI is expected to decrease, use it's absolute value to be comparable
       by = c("ts_length","search_effort","sim_id","metric", "stressed","model")] %>%
-    .[,threshold_crossed :=  ifelse(metric %in% c("FI","mvi") | all(is.na(metric_value)), NA,
-                                    ifelse(any(metric_value > 1), 1,0)),by = c("ts_length","search_effort","sim_id","metric", "stressed","model")] %>% #for the Jacobian indices, a value >1 = unstable
+    .[,threshold_crossed :=  ifelse(metric %in% c("FI","mvi") | all(is.na(metric_value)), as.numeric(NA),
+                                    ifelse(metric %in% "multiAR" & any(metric_value > 0), 1,
+                                    ifelse(any(metric_value > 1), 1,0))),by = c("ts_length","search_effort","sim_id","metric", "stressed","model")] %>% #for the Jacobian indices, a value >1 = unstable
     .[,.SD[1],  c("ts_length","search_effort","sim_id","metric", "stressed","model")] %>% #select unique
     .[,c("sim_id","metric","trend","corrected_trend","threshold_crossed","target_node","jac_collapse","model","stressed","ts_length","search_effort","motif","n_spp")] %>% #drop time
     .[order(model,stressed,sim_id),] #order for readability

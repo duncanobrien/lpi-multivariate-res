@@ -2,6 +2,8 @@
 parallel_multiJI <- function(dt,var,n_cores = 4,sample_spp = TRUE,winsize = 50,...){
   
   require(foreach)
+  require(doFuture)
+  require(progressr)
   require(doRNG)
   
   cl <- parallel::makeCluster(n_cores)
@@ -12,7 +14,7 @@ parallel_multiJI <- function(dt,var,n_cores = 4,sample_spp = TRUE,winsize = 50,.
   dt2 <- foreach::foreach(x = dt2,.packages=c("data.table","EWSmethods"),.errorhandling = "remove") %dorng% {
       
     if(NROW(x) < 10){ #10 is the minimum viable time series
-      out <- data.frame("var" = x[,var,with=F][1], seq(10 * winsize/100,10),NA)
+      out <- data.frame("var" = x[,var,with=F][1], x[["time"]][seq(10 * winsize/100,10)],NA)
       names(out) <- c(var,"time","multiJI")
     }else{
       window <- round(dim(x)[1] * winsize/100)
@@ -40,7 +42,7 @@ parallel_multiJI <- function(dt,var,n_cores = 4,sample_spp = TRUE,winsize = 50,.
           # out <- tryCatch(EWSmethods::multiJI(data = na.omit(as.data.frame(x[,c("time",sampl_spp),with =FALSE])),winsize = winsize,...),
           #                 error = function(err){return(cbind(time = seq(dim(x)[1] * winsize/100,dim(x)[1]),multiJI = NA))})
           out <- tryCatch(EWSmethods::multiJI(data = na.omit(as.data.frame(x[,c("time",sampl_spp),with =FALSE])),winsize = winsize, scale = T),
-                                           error = function(err){return(cbind(time = seq(dim(x)[1] * winsize/100,dim(x)[1]),multiJI = NA))})
+                                           error = function(err){return(cbind(time = x[["time"]][seq(dim(x)[1] * winsize/100,dim(x)[1])],multiJI = NA))})
         }
       # }else if(n_spp_ts < 3){
       #   out <- data.frame(seq(10 * winsize/100,10),NA)
@@ -48,7 +50,7 @@ parallel_multiJI <- function(dt,var,n_cores = 4,sample_spp = TRUE,winsize = 50,.
           out <- data.frame(seq(10 * winsize/100,10),NA)
       }else{
         out <- tryCatch(EWSmethods::multiJI(data = na.omit(as.data.frame(x[,c("time",spp_col),with =FALSE])),winsize = winsize, scale = T),
-                        error = function(err){return(cbind(time = seq(dim(x)[1] * winsize/100,dim(x)[1]),multiJI = NA))})
+                        error = function(err){return(cbind(time = x[["time"]][seq(dim(x)[1] * winsize/100,dim(x)[1])],multiJI = NA))})
         
       }
       out <- data.frame("var" = x[,var,with=F][1],out)
@@ -66,7 +68,9 @@ parallel_multiJI <- function(dt,var,n_cores = 4,sample_spp = TRUE,winsize = 50,.
 parallel_uniJI <- function(dt,var,n_cores = 4,winsize = winsize, tau = 1 , E = 1){
   
   require(foreach)
-
+  require(doFuture)
+  require(progressr)
+  
   # doFuture::registerDoFuture()  ## %dopar% parallelizes via future
   # future::plan(multisession, workers = n_cores)     ## forked parallel processing (via 'parallel')
   # 
@@ -114,10 +118,13 @@ parallel_uniJI <- function(dt,var,n_cores = 4,winsize = winsize, tau = 1 , E = 1
     tmp <- do.call("cbind", tmp)
     #names(tmp) <- c("time",paste("uniJI",names(x)[grepl("spp_",names(x))],sep = "_"))
     
+    if(dim(tmp)[1] == 0){
+      tmp <- data.frame(x[["time"]][seq(10 * winsize/100,10)],NA)
+    }
     out <- data.frame("var" = x[,var,with=F][1],
                       tmp,
-                      "mean_uniJI" = rowMeans(tmp[,-1],na.rm = TRUE),
-                      "max_uniJI" = apply(tmp[,-1], 1, max,na.rm = TRUE))
+                      "mean_uniJI" = tryCatch(rowMeans(tmp[,-1],na.rm = TRUE),error = function(err){NA}),
+                      "max_uniJI" = tryCatch(apply(tmp[,-1], 1, max,na.rm = TRUE),error = function(err){NA}))
     
     names(out) <- c(var,"time",paste("uniJI",names(x)[grepl("spp_",names(x))],sep = "_"),"mean_uniJI","max_uniJI")
     
@@ -136,7 +143,9 @@ parallel_uniJI <- function(dt,var,n_cores = 4,winsize = winsize, tau = 1 , E = 1
 parallel_FI <- function(dt,var,n_cores = 4,winsize = 50, TL = 90){
   
   require(foreach)
-
+  require(doFuture)
+  require(progressr)
+  
   # doFuture::registerDoFuture()  ## %dopar% parallelizes via future
   # future::plan(multisession, workers = n_cores)     ## forked parallel processing (via 'parallel')
   # 
@@ -191,6 +200,8 @@ parallel_FI <- function(dt,var,n_cores = 4,winsize = 50, TL = 90){
 parallel_mvi <- function(dt,var,n_cores = 4,winsize = 50,...){
   
   require(foreach)
+  require(doFuture)
+  require(progressr)
   
   # doFuture::registerDoFuture()  ## %dopar% parallelizes via future
   # future::plan(multisession, workers = n_cores)     ## forked parallel processing (via 'parallel')
@@ -223,3 +234,70 @@ parallel_mvi <- function(dt,var,n_cores = 4,winsize = 50,...){
   #future::plan(sequential)
   return(data.table::rbindlist(dt2))
 }
+
+
+parallel_multiAR <- function(dt,var,n_cores = 4,sample_spp = TRUE,winsize = 50,...){
+  
+  require(foreach)
+  require(doFuture)
+  require(progressr)
+  require(doRNG)
+  source("Code/R/multiAR.R")
+  
+  cl <- parallel::makeCluster(n_cores)
+  doParallel::registerDoParallel(cl)
+  
+  dt2 <- split(dt,by = var)
+  
+  dt2 <- foreach::foreach(x = dt2,.packages=c("data.table"),.export = "multiAR",.errorhandling = "remove",.combine=rbind) %dopar% {
+    
+    if(NROW(x) < 10){ #10 is the minimum viable time series
+      out <- data.frame("var" = x[,var,with=F][1], x[["time"]][seq(10 * winsize/100,10)],NA)
+      names(out) <- c(var,"time","multiAR")
+    }else{
+      window <- round(dim(x)[1] * winsize/100)
+      spp_col <- names(x)[grepl("spp_",names(x))]
+      
+      #sum(x[[j]] == as.numeric(names(sort(table(x[[j]]),decreasing = T)[1])))< (window-1)
+      
+      ts_check <- sapply(spp_col,FUN = function(j){length(unique(x[[j]])) == 1 |  (sum(as.numeric(base::table(x[[j]]) %in% c(1,2))) == 1 & length(unique(x[[j]])) == 2) | any(rle(x[[j]])$lengths >= (window-3))})
+      spp_col <- spp_col[!ts_check]
+      n_spp_ts <- length(spp_col)
+      
+      if((window - 2) < n_spp_ts){
+        #target_spp <- names(x[,spp_col,with = F])[colSums(x[,spp_col,with = F]) >0]
+        
+        target_spp <- spp_col[sapply(spp_col,function(spp){
+          sum(x[,spp,with=F] == as.numeric(names(sort(table(x[,spp,with=F]),decreasing = T)[1])))< (window-1) })]
+        
+        if(isFALSE(sample_spp)){
+          stop(paste0("Length of windowed time series (",window,") < number of nodes (" ,n_spp_ts,"). Increase winsize or allow sampling of species"))
+        }
+        if(isTRUE(sample_spp)){
+          warning(paste0("Length of windowed time series (",window,") < number of nodes (" ,n_spp_ts,"). Species have been sampled to allow index calculation"))
+          
+          sampl_spp <- sample(target_spp,round(window-2),replace = F)
+          out <- tryCatch(multiAR(data = na.omit(as.data.frame(x[,c("time",sampl_spp),with =FALSE])),winsize = winsize, scale = T, method = "rolling")$raw,
+                          error = function(err){return(cbind(time = x[["time"]][seq(dim(x)[1] * winsize/100,dim(x)[1])],multiAR = NA))})
+        }
+        # }else if(n_spp_ts < 3){
+        #   out <- data.frame(seq(10 * winsize/100,10),NA)
+      }else if(n_spp_ts < 2){
+        out <- data.frame(seq(10 * winsize/100,10),NA)
+      }else{
+        out <- tryCatch(multiAR(data = na.omit(as.data.frame(x[,c("time",spp_col),with =FALSE])),winsize = winsize, scale = T, method = "rolling")$raw,
+                        error = function(err){return(cbind(time = x[["time"]][seq(dim(x)[1] * winsize/100,dim(x)[1])],multiAR = NA))})
+        
+      }
+      out <- data.frame("var" = x[,var,with=F][1],out)
+      names(out) <- c(var,"time","multiAR")
+      
+      #pb()
+    }
+    return(out)
+  }
+  print("\u2713 multiAR")
+  parallel::stopCluster(cl)
+  return(dt2)
+}
+

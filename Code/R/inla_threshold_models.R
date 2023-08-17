@@ -40,7 +40,7 @@ files <- paste0("Data/resilience/summary/summary_motif1_",c(5,15,25),"_invasive.
 summary_data <- vroom::vroom(files,col_select = !starts_with("uniJI")) %>%
   as.data.table() %>%
   .[sim_id %in% sample_id,] %>%
-  .[metric %in% c("multiJI","max_uniJI","mean_uniJI"),] %>%
+  .[metric %in% c("multiJI","max_uniJI","mean_uniJI","multiAR"),] %>%
   .[,comm_id := paste(n_spp,
                        paste0(unlist(strsplit(sim_id, "_", fixed=TRUE))[1:2],collapse = "_"),
                        sep="_"), 
@@ -132,13 +132,55 @@ summary_range2 <- summary_post2 |>
   tidybayes::median_qi(.width = c(.95, .8, .5))
 
 #######################
+# Fit multiAR
+#######################
+
+inla_success_data3 <- subset(summary_data,metric == "multiAR") %>%
+  dplyr::bind_rows(pred_success_data)
+
+inla_success3 <- inla(threshold_crossed ~ n_spp*stressed*ts_length*search_effort 
+                      +
+                        f(comm_id, model = "iid",
+                          hyper = list(prec = list(prior = "logtnormal",
+                                                   param = c(0, 1)))) ,
+                      data = inla_success_data3, 
+                      family = "binomial",
+                      lincomb = lincomb_summary,
+                      control.compute = list(config = TRUE,cpo = TRUE),
+                      control.predictor=list(compute=TRUE),
+                      control.fixed = prior.fixed)
+
+any(na.omit(inla_success3$cpo$failure)>=1)
+
+fitted_rows_success3 <- which(is.na(inla_success_data3$sim_id))
+
+marg_summary3 <- inla_success3$marginals.lincomb.derived[grepl("lc",names(inla_success3$marginals.lincomb.derived))] #subset marginals (equivalet to posteriors) to the linear combinations
+
+summary_post3 <- lapply(marg_summary3,function(x){
+  data.frame(".draw" = 1:draws,
+             ".value" = inla.rmarginal(draws, x))
+}) |>
+  data.table::rbindlist() |>
+  cbind(
+    newdata[,c("n_spp","stressed","ts_length","search_effort")] |>
+      dplyr::slice(rep(1:dplyr::n(), each = draws)) #merge with newdata
+  ) |>
+  dplyr::mutate(ts_length = ts_length*100,
+                stressed = ifelse(stressed == 1,"Yes","No")) #convert back to true ts length for visualisations
+
+summary_range3 <- summary_post3 |>
+  dplyr::group_by(n_spp,stressed,ts_length,search_effort) |>
+  tidybayes::median_qi(.width = c(.95, .8, .5))
+
+#######################
 # Save posteriors
 #######################
 saveRDS(inla_success1,"Results/models/motif1_threshold_multiJI.rds")
 saveRDS(inla_success2,"Results/models/motif1_threshold_uniJI.rds")
+saveRDS(inla_success3,"Results/models/motif1_threshold_multiAR.rds")
 
-save(summary_post1,summary_post2,
+save(summary_post1,summary_post2,summary_post3,
      file = "Results/models/motif1_threshold_posteriors.RData")
 
-save(summary_range1,summary_range2,
+save(summary_range1,summary_range2,summary_range3,
      file = "Results/models/motif1_threshold_ranges.RData")

@@ -1,0 +1,20 @@
+"metric","Parameter","Median","CI_low","CI_high","kld"
+"multiJI","Fixed effects",NA,NA,NA,NA
+NA,"(Intercept)","0.592","0.184","0.999","0"
+NA,"n_spp","0.381","0.353","0.41","0"
+NA,"stressed1","0.328","0.081","0.575","0"
+NA,"ts_length","-12.593","-13.078","-12.109","0"
+NA,"search_effort","0.353","0.08","0.626","0"
+NA,"n_spp:stressed1","-0.199","-0.224","-0.174","0"
+NA,"n_spp:ts_length","-0.169","-0.203","-0.136","0"
+NA,"stressed1:ts_length","8.906","8.341","9.47","0"
+NA,"n_spp:search_effort","-0.081","-0.11","-0.052","0"
+NA,"stressed1:search_effort","0.787","0.383","1.19","0"
+NA,"ts_length:search_effort","2.25","1.556","2.943","0"
+NA,"n_spp:stressed1:ts_length","0.126","0.082","0.169","0"
+NA,"n_spp:stressed1:search_effort","0.039","-0.002","0.08","0"
+NA,"n_spp:ts_length:search_effort","0.168","0.118","0.219","0"
+NA,"stressed1:ts_length:search_effort","-0.769","-1.631","0.093","0"
+NA,"n_spp:stressed1:ts_length:search_effort","-0.178","-0.248","-0.108","0"
+NA,"Random effects",NA,NA,NA,NA
+NA,"Precision for comm_id","1.339","0.98","1.779",NA
