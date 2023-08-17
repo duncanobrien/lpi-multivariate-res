@@ -1,4 +1,4 @@
-#Supporting functions called by the primary scripts
+# Supporting functions called by the primary scripts
 
 [*A_matrix_fns.R*](A_matrix_fns.R) - function for generating stable species interaction matrices and food web motifs. Called by [*save_communities.R*](https://github.com/duncanobrien/lpi-multivariate-res/tree/main/Code/R/save_communities.R).
 
@@ -8,4 +8,4 @@
 
 [*multiAR.R*](multiAR.R) - function to generate the resilience metric 'multivariate autocorrelation' suggested by [Williamson and Lenton (2015)](https://doi.org/10.1063/1.4908603). Called by [*parallel_resilience_fns.R*](https://github.com/duncanobrien/lpi-multivariate-res/tree/main/Code/R/auxiliary_functions/parallel_resilience_fns.R).
 
-[parallel_resilience_fns.R*](parallel_resilience_fns.R) - functions to parallel compute each resilience metric across simulations. Called by [*resilience_data_bulk.R*](https://github.com/duncanobrien/lpi-multivariate-res/tree/main/Code/R/resilience_data_bulk.R). 
+[*parallel_resilience_fns.R*](parallel_resilience_fns.R) - functions to parallel compute each resilience metric across simulations. Called by [*resilience_data_bulk.R*](https://github.com/duncanobrien/lpi-multivariate-res/tree/main/Code/R/resilience_data_bulk.R). 
