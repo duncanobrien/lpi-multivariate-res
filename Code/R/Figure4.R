@@ -1,191 +1,123 @@
-# Figure 4
+# Figure 3
 
 require(dplyr)
 require(ggplot2)
 require(patchwork)
 require(tidybayes)
 
-load("Results/models/motif1_threshold_posteriors.RData")
-load("Results/models/motif1_threshold_ranges.RData")
-
-summary_range_data <- rbind(summary_range1 |> dplyr::mutate(metric = "multiJI"),
-                            summary_range2 |> dplyr::mutate(metric = "max_uniJI"),
-                            summary_range3 |> dplyr::mutate(metric = "multiAR")) |>
-  dplyr::mutate(n_spp = factor(n_spp,levels = c(5,15,25)))
-
-summary_post_data <- rbind(summary_post1 |> dplyr::mutate(metric = "multiJI"),
-                           summary_post2 |> dplyr::mutate(metric = "max_uniJI"),
-                           summary_post3 |> dplyr::mutate(metric = "multiAR")) |>
-  dplyr::mutate(n_spp = factor(n_spp,levels = c(5,15,25)))
-
-inv_logit_perc <- scales::trans_new("inv_logit_perc",
-                                    transform = function(x){suppressWarnings(plogis(x))},
-                                    inverse = function(x){suppressWarnings(qlogis(x))})
-labels <- c(-4,round(qlogis(c(0.25,0.5,0.75)),1),4) #ensure breaks @ 0.25 probability intervals
-breaks <- c(-4,round(qlogis(c(0.25,0.5,0.75)),1),4)
+load("Results/models/motif1_25_invasive_slope_posteriors.RData")
+load("Results/models/motif1_25_invasive_slope_ranges.RData")
 
 #######################
 # Create figure
 #######################
-
-# ggplot2::ggsave("Results/figures/figure4.pdf",
-# ggplot(subset(summary_range_data,n_spp == 5),aes(x=.value,y=metric,group = stressed)) +
-#   geom_vline(xintercept = 0,color = "black",linetype = "dashed")+
-#   tidybayes::stat_slab(data= subset(summary_post_data,n_spp == 5), aes(fill=stressed,group = stressed),alpha=0.5,
-#                        position = ggstance::position_dodgev(height = 0.75)) +
-#   tidybayes::geom_pointinterval(aes(xmin = .lower, xmax = .upper,col=stressed),
-#                                 fatten_point = 1.1,
-#                                 interval_size_range = c(0.7, 1.5),position = ggstance::position_dodgev(height = 0.75)) +
-#   facet_grid(search_effort~ts_length,scales = "free_y") + 
-#   scale_fill_manual(values = c("#67705F","#E3A59F"),name = "Presence\nof stress")+
-#   scale_color_manual(values = c("#67705F","#E3A59F"),
-#                      guide = "none")+
-#   xlab("Probability of exceeding 1") + ylab("Metric") +
-#   scale_x_continuous(labels = round(plogis(labels),1), breaks = breaks)+
-#   scale_y_discrete(expand = expansion(add = c(0.75, 1)))+
-#   coord_trans(x = inv_logit_perc,xlim = c(-4.5,4.5))+
-#   ggtitle("N = 5") +
-#   theme_bw() +
-#   theme(axis.title.x=element_blank(),
-#         axis.text.x=element_blank(),
-#         axis.title.y=element_blank(),
-#         panel.grid.major = element_blank(), 
-#         panel.grid.minor = element_blank(),
-#         panel.background = element_blank(),
-#         legend.key.width = unit(1.5, "line"),
-#         plot.margin = margin(5.5,5.5,0.0,5.5, unit = "pt")) +
-#   
-#   plot_spacer() +
-#   
-#   ggplot(subset(summary_range_data,n_spp == 15),aes(x=.value,y=metric,group = stressed)) +
-#   geom_vline(xintercept = 0,color = "black",linetype = "dashed")+
-#   tidybayes::stat_slab(data= subset(summary_post_data,n_spp == 15), aes(fill=stressed,group = stressed),alpha=0.5,
-#                        position = ggstance::position_dodgev(height = 0.75)) +
-#   tidybayes::geom_pointinterval(aes(xmin = .lower, xmax = .upper,col=stressed),
-#                                 fatten_point = 1.1,
-#                                 interval_size_range = c(0.7, 1.5),position = ggstance::position_dodgev(height = 0.75)) +
-#   facet_grid(search_effort~ts_length,scales = "free_y") + 
-#   scale_fill_manual(values = c("#67705F","#E3A59F"),name = "Presence\nof stress")+
-#   scale_color_manual(values = c("#67705F","#E3A59F"),
-#                      guide = "none")+
-#   xlab("Probability of exceeding 1") + ylab("Metric") +
-#   scale_x_continuous(labels = round(brms::inv_logit_scaled(labels),1), breaks = breaks)+
-#   scale_y_discrete(expand = expansion(add = c(0.75, 1)))+
-#   coord_trans(x = inv_logit_perc,xlim = c(-4.5,4.5))+
-#   ggtitle("N = 15") +
-#   theme_bw() +
-#   theme(axis.title.x=element_blank(),
-#         axis.text.x=element_blank(),
-#         panel.grid.major = element_blank(), 
-#         panel.grid.minor = element_blank(),
-#         panel.background = element_blank(),
-#         legend.key.width = unit(1.5, "line"),
-#         plot.margin = margin(5.5,5.5,0.0,5.5, unit = "pt")) +
-#   
-#   plot_spacer() +
-#   
-#   ggplot(subset(summary_range_data,n_spp == 25),aes(x=.value,y=metric,group = stressed)) +
-#   geom_vline(xintercept = 0,color = "black",linetype = "dashed")+
-#   tidybayes::stat_slab(data= subset(summary_post_data,n_spp == 25), aes(fill=stressed,group = stressed),alpha=0.5,
-#                        position = ggstance::position_dodgev(height = 0.75)) +
-#   tidybayes::geom_pointinterval(aes(xmin = .lower, xmax = .upper,col=stressed),
-#                                 fatten_point = 1.1,
-#                                 interval_size_range = c(0.7, 1.5),position = ggstance::position_dodgev(height = 0.75)) +
-#   facet_grid(search_effort~ts_length,scales = "free_y") + 
-#   scale_fill_manual(values = c("#67705F","#E3A59F"),name = "Presence\nof stress")+
-#   scale_color_manual(values = c("#67705F","#E3A59F"),
-#                      guide = "none")+
-#   xlab("Probability of exceeding 1") + ylab("Metric") +
-#   scale_x_continuous(labels = round(brms::inv_logit_scaled(labels),1), breaks = breaks)+
-#   scale_y_discrete(expand = expansion(add = c(0.75, 1)))+
-#   coord_trans(x = inv_logit_perc,xlim = c(-4.5,4.5))+
-#   ggtitle("N = 25") +
-#   theme_bw() +
-#   theme(axis.title.y=element_blank(),
-#         panel.grid.major = element_blank(), 
-#         panel.grid.minor = element_blank(),
-#         panel.background = element_blank(),
-#         legend.key.width = unit(1.5, "line")) +
-#   
-#   plot_annotation(tag_levels ="a") +
-#   plot_layout(nrow = 5, guides = "collect", heights = c(1,-0.105,1,-0.105,1)) &
-#   theme(plot.title = element_text(size = 10, face = "bold")),
-# width = 7,height = 7)
-# 
-
-
-ggplot2::ggsave("Results/figures/figure4_alt.pdf",
-                ggplot(subset(summary_range_data,metric == "multiJI"),aes(x=.value,y=n_spp,group = stressed)) +
-                  geom_vline(xintercept = 0,color = "black",linetype = "dashed")+
-                  tidybayes::stat_slab(data= subset(summary_post_data,metric == "multiJI"), 
-                                       aes(fill=stressed),alpha=0.5,
-                                       position = ggstance::position_dodgev(height = 0.5)) +
-                  tidybayes::geom_pointinterval(aes(xmin = .lower, xmax = .upper,col=stressed),
-                                                fatten_point = 1.1,
-                                                interval_size_range = c(0.7, 1.5),position = ggstance::position_dodgev(height = 0.5)) +
-                  facet_grid(search_effort~ts_length,scales = "free_y") + 
-                  scale_fill_manual(values = c("#67705F","#E3A59F"),name = "Presence\nof stress")+
-                  scale_color_manual(values = c("#67705F","#E3A59F"),
-                                     guide = "none")+
-                  xlab("Probability of exceeding 1") + ylab("Community size (#species)") +
-                  scale_x_continuous(labels = round(plogis(labels),1), breaks = breaks)+
-                  coord_trans(x = inv_logit_perc,xlim = c(-4.5,4.5))+
-                  ggtitle("multiJI") +
-                  theme_bw() +
-                  theme(axis.title.x=element_blank(),
-                        axis.text.x=element_blank(),
-                        panel.grid.major = element_blank(), 
-                        panel.grid.minor = element_blank(),
-                        panel.background = element_blank(),
-                        legend.key.width = unit(1.5, "line"),
-                        plot.margin = margin(5.5,5.5,0.0,5.5, unit = "pt")) +
-                  
-                  ggplot(subset(summary_range_data,metric == "max_uniJI"),aes(x=.value,y=n_spp,group = stressed)) +
-                  geom_vline(xintercept = 0,color = "black",linetype = "dashed")+
-                  tidybayes::stat_slab(data= subset(summary_post_data,metric == "max_uniJI"), aes(fill=stressed,group = stressed),alpha=0.5,
-                                       position = ggstance::position_dodgev(height = 0.5)) +
-                  tidybayes::geom_pointinterval(aes(xmin = .lower, xmax = .upper,col=stressed),
-                                                fatten_point = 1.1,
-                                                interval_size_range = c(0.7, 1.5),position = ggstance::position_dodgev(height = 0.5)) +
-                  facet_grid(search_effort~ts_length,scales = "free_y") + 
-                  scale_fill_manual(values = c("#67705F","#E3A59F"),name = "Presence\nof stress")+
-                  scale_color_manual(values = c("#67705F","#E3A59F"),
-                                     guide = "none")+
-                  xlab("Probability of exceeding 1") + ylab("Community size (#species)") +
-                  scale_x_continuous(labels = round(plogis(labels),1), breaks = breaks)+
-                  coord_trans(x = inv_logit_perc,xlim = c(-4.5,4.5))+
-                  ggtitle("max_uniJI") +
-                  theme_bw() +
-                  theme(axis.title.x=element_blank(),
-                        axis.text.x=element_blank(),
-                        panel.grid.major = element_blank(), 
-                        panel.grid.minor = element_blank(),
-                        panel.background = element_blank(),
-                        legend.key.width = unit(1.5, "line"),
-                        plot.margin = margin(5.5,5.5,0.0,5.5, unit = "pt")) +
-                  
-                  ggplot(subset(summary_range_data,metric == "multiAR"),aes(x=.value,y=n_spp,group = stressed)) +
-                  geom_vline(xintercept = 0,color = "black",linetype = "dashed")+
-                  tidybayes::stat_slab(data= subset(summary_post_data,metric == "multiAR"), aes(fill=stressed,group = stressed),alpha=0.5,
-                                       position = ggstance::position_dodgev(height = 0.5)) +
-                  tidybayes::geom_pointinterval(aes(xmin = .lower, xmax = .upper,col=stressed),
-                                                fatten_point = 1.1,
-                                                interval_size_range = c(0.7, 1.5),position = ggstance::position_dodgev(height = 0.5)) +
-                  facet_grid(search_effort~ts_length,scales = "free_y") + 
-                  scale_fill_manual(values = c("#67705F","#E3A59F"),name = "Presence\nof stress")+
-                  scale_color_manual(values = c("#67705F","#E3A59F"),
-                                     guide = "none")+
-                  xlab("Probability of exceeding threshold") + ylab("Community size (#species)") +
-                  scale_x_continuous(labels = round(plogis(labels),1), breaks = breaks)+
-                  coord_trans(x = inv_logit_perc,xlim = c(-4.5,4.5))+
-                  ggtitle("multiAR") +
-                  theme_bw() +
-                  theme(panel.grid.major = element_blank(), 
-                        panel.grid.minor = element_blank(),
-                        panel.background = element_blank(),
-                        legend.key.width = unit(1.5, "line")) +
-                  
-                  plot_annotation(tag_levels ="a") +
-                  plot_layout(nrow = 3, byrow = F,guides = "collect") &
-                  theme(plot.title = element_text(size = 10, face = "bold")),
-                width = 7,height = 7)
+ggplot2::ggsave("Results/figures/figure4.pdf",
+       
+       ggplot(slope_range_25_1 |> mutate(metric = "multiJI"),
+              aes(y = .value, x = search_effort,group = stressed)) +
+         geom_hline(yintercept = 0, linetype = "dashed", colour="black") +
+         tidybayes::stat_slab(data= slope_post_25_1 |> mutate(metric = "multiJI"),
+                              aes(fill=stressed,group = stressed),alpha=0.5,position = position_dodge(width=0.1)) +
+         tidybayes::geom_pointinterval(aes(ymin = .lower, ymax = .upper,col=stressed),
+                                       fatten_point = 1.3,
+                                       interval_size_range = c(0.8, 2),position = position_dodge(width=0.1)) +
+         scale_color_manual(values = c("#67705F","#E3A59F"),name = "Presence\nof stress",labels = c("No","Yes"),guide = "none")+
+         scale_fill_manual(values = c("#67705F","#E3A59F"),name = "Presence\nof stress",labels = c("No","Yes"))+
+         scale_x_continuous(breaks = seq(0.1,1.0,0.2))+
+         facet_grid(metric~ts_length)+
+         coord_cartesian(ylim = c(-0.3,0.3))+
+         xlab("Search effort") +
+         ylab("Trend estimate") + 
+         theme_bw()+
+         theme(axis.title.x=element_blank(),
+               axis.text.x=element_blank(),
+               panel.grid.minor = element_blank(),
+               panel.background = element_blank(),
+               plot.margin = margin(5.5,5.5,0.5,5.5, unit = "pt"))+
+         
+         ggplot( slope_range_25_2 |> mutate(metric = "mean_uniJI"),
+                 aes(y = .value, x = search_effort,group = stressed)) +
+         geom_hline(yintercept = 0, linetype = "dashed", colour="black") +
+         tidybayes::stat_slab(data = slope_post_25_2 |> mutate(metric = "mean_uniJI"),
+                              aes(fill=stressed,group = stressed),alpha=0.5,position = position_dodge(width=0.1)) +
+         tidybayes::geom_pointinterval(aes(ymin = .lower, ymax = .upper,col=stressed),
+                                       fatten_point = 1.3,
+                                       interval_size_range = c(0.8, 2),position = position_dodge(width=0.1)) +
+         scale_color_manual(values = c("#67705F","#E3A59F"),name = "Presence\nof stress",labels = c("No","Yes"),guide = "none")+
+         scale_fill_manual(values = c("#67705F","#E3A59F"),name = "Presence\nof stress",labels = c("No","Yes"))+
+         scale_x_continuous(breaks = seq(0.1,1.0,0.2))+
+         facet_grid(metric~ts_length)+
+         coord_cartesian(ylim = c(-0.075,0.125))+
+         xlab("Search effort") +
+         ylab("Trend estimate") + 
+         theme_bw()+
+         theme(axis.title.x=element_blank(),
+               axis.text.x=element_blank(),
+               panel.grid.minor = element_blank(),
+               panel.background = element_blank(),
+               plot.margin = margin(5.5,5.5,0.5,5.5, unit = "pt"))+
+         
+         ggplot(slope_range_25_3 |> mutate(metric = "FI"),
+                aes(y = .value, x = search_effort,group = stressed)) +
+         geom_hline(yintercept = 0, linetype = "dashed", colour="black") +
+         tidybayes::stat_slab(data = slope_post_25_3 |> mutate(metric = "FI"),
+                              aes(fill=stressed,group = stressed),alpha=0.5,position = position_dodge(width=0.1)) +
+         tidybayes::geom_pointinterval(aes(ymin = .lower, ymax = .upper,col=stressed),
+                                       fatten_point = 1.3,
+                                       interval_size_range = c(0.8, 2),position = position_dodge(width=0.1)) +
+         scale_color_manual(values = c("#67705F","#E3A59F"),name = "Presence\nof stress",labels = c("No","Yes"),guide = "none")+
+         scale_fill_manual(values = c("#67705F","#E3A59F"),name = "Presence\nof stress",labels = c("No","Yes"))+
+         scale_x_continuous(breaks = seq(0.1,1.0,0.2))+
+         facet_grid(metric~ts_length)+
+         coord_cartesian(ylim = c(-0.45,0.05))+
+         xlab("Search effort") +
+         ylab("Trend estimate") + 
+         theme_bw() +
+         theme(axis.title.x=element_blank(),
+               axis.text.x=element_blank(),
+               panel.grid.minor = element_blank(),
+               panel.background = element_blank(),
+               plot.margin = margin(5.5,5.5,0.5,5.5, unit = "pt"))+
+         
+         ggplot( slope_range_25_4 |> mutate(metric = "mvi"),
+                 aes(y = .value, x = search_effort,group = stressed)) +
+         geom_hline(yintercept = 0, linetype = "dashed", colour="black") +
+         tidybayes::stat_slab(data =  slope_post_25_4 |> mutate(metric = "mvi"),
+                              aes(fill=stressed,group = stressed),alpha=0.5,position = position_dodge(width=0.1)) +
+         tidybayes::geom_pointinterval(aes(ymin = .lower, ymax = .upper,col=stressed),
+                                       fatten_point = 1.3,
+                                       interval_size_range = c(0.8, 2),position = position_dodge(width=0.1)) +
+         scale_color_manual(values = c("#67705F","#E3A59F"),name = "Presence\nof stress",labels = c("No","Yes"),guide = "none")+
+         scale_fill_manual(values = c("#67705F","#E3A59F"),name = "Presence\nof stress",labels = c("No","Yes"))+
+         scale_x_continuous(breaks = seq(0.1,1.0,0.2))+
+         facet_grid(metric~ts_length)+
+         coord_cartesian(ylim = c(-0.05,0.45))+
+         xlab("Search effort") +
+         ylab("Log trend\nestimate") + 
+         theme_bw()+ 
+         theme(axis.title.x=element_blank(),
+               axis.text.x=element_blank(),
+               panel.grid.minor = element_blank(),
+               panel.background = element_blank(),
+               plot.margin = margin(5.5,5.5,0.5,5.5, unit = "pt"))+
+         
+      ggplot( slope_range_25_5 |> mutate(metric = "multiAR"),
+                 aes(y = .value, x = search_effort,group = stressed)) +
+         geom_hline(yintercept = 0, linetype = "dashed", colour="black") +
+         tidybayes::stat_slab(data =  slope_post_25_5 |> mutate(metric = "multiAR"),
+                              aes(fill=stressed,group = stressed),alpha=0.5,position = position_dodge(width=0.1)) +
+         tidybayes::geom_pointinterval(aes(ymin = .lower, ymax = .upper,col=stressed),
+                                       fatten_point = 1.3,
+                                       interval_size_range = c(0.8, 2),position = position_dodge(width=0.1)) +
+         scale_color_manual(values = c("#67705F","#E3A59F"),name = "Presence\nof stress",labels = c("No","Yes"),guide = "none")+
+         scale_fill_manual(values = c("#67705F","#E3A59F"),name = "Presence\nof stress",labels = c("No","Yes"))+
+         scale_x_continuous(breaks = seq(0.1,1.0,0.2))+
+         facet_grid(metric~ts_length)+
+         coord_cartesian(ylim = c(-0.2,0.1))+
+         xlab("Search effort") +
+         ylab("Trend estimate") + 
+         theme_bw()+ 
+         theme(panel.grid.minor = element_blank(),
+               panel.background = element_blank())+
+         plot_layout(nrow = 5, byrow = FALSE,guides = "collect"),
+       width = 6,height = 7)
