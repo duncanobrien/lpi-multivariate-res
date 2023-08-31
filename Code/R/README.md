@@ -8,7 +8,7 @@
 
 [*inla_5_spp.R*](inla_5_spp.R), [*inla_15_spp.R*](inla_15_spp.R) & [*inla_25_spp*](inla_25_spp.R) - fit hierachical linear models models to estimate the global trend of each resilience metric through time against time series legnth and search effort. Separate scripts are provided for each community size for readability.
 
-[*inla_threshold_models.R*] - fits hierachical logistic models to binary stability-instability signals of the Jacobian estimating resilience metrics.
+[*inla_threshold_models.R*](inla_threshold_models.R) - fits hierachical logistic models to binary stability-instability signals of the Jacobian estimating resilience metrics.
 
 [*Figure2.R*](Figure2.R), [*Figure3.R*](Figure3.R), [*Figure4.R*](Figure4.R), [*Figure5.R*](Figure5.R), [*FiguresS1_S3.R*](FiguresS1_S3.R) & [*TablesS1_S18.R*](TableS1_S18.R) - generate the main figures available [here](https://github.com/duncanobrien/lpi-multivariate-res/tree/main/Results/figures) and the [supplementary tables](https://github.com/duncanobrien/lpi-multivariate-res/tree/main/Results/figures/supplementary_tables).
 
