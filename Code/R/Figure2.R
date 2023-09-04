@@ -1,4 +1,4 @@
-# Figure 1
+# Figure 2
 
 require(dplyr)
 require(ggplot2)

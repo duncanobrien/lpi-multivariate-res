@@ -68,9 +68,4 @@ quantile(tot_summary_lpi$ts_len,c(0.05,0.25,0.5,0.75,0.95))
 hist(lpi_summary_long$ts_len)
 quantile(lpi_summary_long$ts_len,c(0.01,0.05,0.25,0.5,0.75,0.95,0.99))
 
-plot(density(lpi_summary_long$ts_len))
-
-tt <- round(rnorm(100,mean=50,15))
-kk <- sapply(tt,FUN = function(x){
-  round(x*pnbinom(q=x*0.75,size = x, prob = 0.5))
-})
+plot(density(lpi_summary_long$ts_len))xw

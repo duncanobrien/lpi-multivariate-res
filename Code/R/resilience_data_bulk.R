@@ -118,7 +118,7 @@ lapply(parameter_space, function(motif_data){
     
     rm(raw_stress_data,raw_unstressed_data) #remove object to release memory 
     
-    inflec_col <- ifelse(model =="harvest","inflection_pt_decr","inflection_pt_incr") #harvesting model expected to positively inflect, the invasive model, negatively
+    inflec_col <- ifelse(model =="harvest","inflection_pt_decr","inflection_pt_incr") #harvesting model expected to negatively inflect, the invasive model, positively
     
     save_resilience_data <- lapply(seq_len(nrow(motif_data)), function(df){
       #save_resilience_data <- lapply(1:2, function(df){
