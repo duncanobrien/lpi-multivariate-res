@@ -1,17 +1,19 @@
-# Figure 2
+# Figure 1
 
 require(ggplots)
 require(patchwork)
-require(data.table)
+require(magick)
 require(igraph)
 require(ggraph)
+require(tidygraph)
+require(data.table)
 require(magrittr)
 source("Code/R/auxiliary_functions/julia_wrangle_function.R")
 
 motif = 1 
 model = "invasive"
 n_spp = 5
-simulation_id <- "1_2_1"
+simulation_id <- "1_2_1" #example simulation
 
 #######################
 # Load in interaction matrices
@@ -20,7 +22,7 @@ simulation_id <- "1_2_1"
 matrix_path <- paste("Data/networks/",n_spp,"_spp/","web_",motif,".RData",sep="") #define stressed model path
 load(matrix_path)
 
-simulation_info <- out_file[[as.numeric(strsplit(simulation_id,split = "_")[[1]][2])]]
+simulation_info <- out_file[[as.numeric(strsplit(simulation_id,split = "_")[[1]][2])]] #extract just the example simulation
 
 interaction_matrix <- simulation_info$A_matrix
 
@@ -30,19 +32,20 @@ for(j in unique(tlvl_matrix$species)){
   if(sum(tlvl_matrix$tlvl == subset(tlvl_matrix,species == j)$tlvl) > 1){
     interaction_matrix[j,which(tlvl_matrix$tlvl == subset(tlvl_matrix,species == j)$tlvl)] <- 1
   }
-}
+} #convert intra-trophic interactions to positive to ensure they are present in the plot 
 
-interaction_matrix <- abs(ceiling(interaction_matrix))
-diag(interaction_matrix) = 1
+interaction_matrix <- abs(ceiling(interaction_matrix)) #extract just the positive interactions
+diag(interaction_matrix) = 1 #also include intraspecific interaction
 
 graph5 <- igraph::graph_from_adjacency_matrix(interaction_matrix,
-                                              mode="directed", diag=T,weighted = T)
+                                              mode="directed", diag=T,weighted = T) #create graph
 
-igraph::V(graph5)$tlvl <- simulation_info$tlvl[,1]
-igraph::V(graph5)$species <- simulation_info$tlvl[,2]
-igraph::E(graph5)$shared <- c("self","intra","intra","self","inter","inter","inter","inter","inter","inter","inter")
+igraph::V(graph5)$tlvl <- simulation_info$tlvl[,1] #label nodes with trophic levels
+igraph::V(graph5)$species <- simulation_info$tlvl[,2] #label nodes with species levels
+igraph::E(graph5)$shared <- c("self","intra","intra","self","inter","inter",
+                              "inter","inter","inter","inter","inter") #label edges with interaction types
 
-my_graph <- as_tbl_graph(graph5, directed = FALSE)
+example_graph <- tidygraph::as_tbl_graph(graph5, directed = FALSE) #make tidy
 
 #######################
 # Load in raw simulations
@@ -108,12 +111,12 @@ simulation_data <- rbind(resilience_stress_csv,resilience_unstressed_csv) %>%
 # Create figure
 #######################
 
-p1 <- ggraph(my_graph, layout = "stress") +
+p1 <- ggraph(example_graph, layout = "stress") +
   geom_edge_link(aes(color = shared),
                  width = 2) +
   geom_node_point(size = 11,
                   col = "#5D369D") +
-  geom_edge_loop(aes( strength = 0.5),check_overlap = T, 
+  geom_edge_loop(aes(strength = 0.5),check_overlap = T, 
                  arrow = arrow(length = unit(6, "pt"), type = "closed"),
                  start_cap = circle(3, "mm"),
                  end_cap = circle(3, "mm"))  +
@@ -131,20 +134,14 @@ p2 <- ggplot(simulation_data,aes(x = time, y = density,col=species)) +
   facet_wrap(~stressed) +
   xlab("Time point") + ylab("Density") +
   scale_color_manual(values = c("grey40","#bfbd3d", "#5d3099", "#69c756","#6886c4"),
-                     labels = paste("Species",1:5)) +
+                     guide = "none") +
   theme_bw() +
   theme(legend.title = ggplot2::element_blank())
 
 p3 <- ggplot() +
   ggpubr::background_image(magick::image_read("Results/figures/figure1_c.png"))
 
-top_p <- (p1 + p2) + 
-  plot_annotation(tag_levels = "a") 
-
-top_p/p3  + 
-  plot_annotation(tag_levels = "a")
-
 ggsave("Results/figures/figure1.pdf",
-       (p1 + p2)/p3  + 
+       (p1|p2)/p3  + 
          plot_annotation(tag_levels = "a"),
-       width = 7,height = 6)
+       width = 6,height = 6)
