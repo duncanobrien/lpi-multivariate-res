@@ -1,4 +1,5 @@
 # lpi-multivariate-res
+[![DOI](https://zenodo.org/badge/621230510.svg)](https://zenodo.org/badge/latestdoi/621230510)
 
 Processed data, code and results from O'Brien D.A. & Clements C.F. 2023. Resilience metrics are robust across data qualities but sensitive to community size.
 
