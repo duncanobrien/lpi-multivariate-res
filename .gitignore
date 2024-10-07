@@ -2,5 +2,6 @@
 .Rproj.user
 .Rhistory
 .Ruserdata
+/Data/lpi_pops_20190927.csv
 /Data/simulations/**/*.csv
 !/Data/simulations/**/jacobian_*.csv
