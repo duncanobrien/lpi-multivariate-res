@@ -4,7 +4,7 @@ using Logging: global_logger
 using TerminalLoggers: TerminalLogger
 global_logger(TerminalLogger())
 
-cd("/Users/ul20791/Desktop/Academia/PhD/Repositories/lpi-multivariate-res")
+cd("/Users/ul20791/Desktop/Academia/PhD/Repositories/lpi-multivariate-res copy")
 
 using DataFrames
 using CSV
@@ -18,7 +18,7 @@ using JLD2
 using Symbolics
 using DiffEqBase
 using ForwardDiff
-using DataFrames
+using StatsBase
 using DifferentialEquations
 include("./generalised_lotka_volterra_invasive.jl")
 include("./generalised_lotka_volterra_stochastic.jl")

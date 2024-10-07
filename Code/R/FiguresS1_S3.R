@@ -12,7 +12,7 @@ require(patchwork)
 set.seed(1234)
 
 sample_id <- expand.grid("motif" = 1,
-                         "community" = 1:30,
+                         "community" = 1:25,
                          "sim" = 1:25) |>
   dplyr::mutate(sample_id = paste(motif,community,sim,sep = "_")) |>
   dplyr::select(sample_id) |> unlist() |> unname() |>
@@ -144,7 +144,8 @@ s1e <- ggplot(subset(figure_data,metric == "multiAR" & n_spp == 5),
 
 ggsave("Results/figures/figureS1.pdf",
        ((s1a/s1b/s1c)|(s1d/s1e/patchwork::plot_spacer())) +
-         patchwork::plot_layout(guides = "collect"),
+         patchwork::plot_layout(guides = "collect")  &
+         theme(strip.background = element_rect(fill="white")),
 width = 12,height = 7)
 
 #######################
@@ -230,7 +231,8 @@ s2e <-  ggplot(subset(figure_data,metric == "multiAR" & n_spp == 15),
 
 ggsave("Results/figures/figureS2.pdf",
        ((s2a/s2b/s2c)|(s2d/s2e/patchwork::plot_spacer())) +
-         patchwork::plot_layout(guides = "collect"),
+         patchwork::plot_layout(guides = "collect") &
+         theme(strip.background = element_rect(fill="white")),
        width = 12,height = 7)
 
 #######################
@@ -315,5 +317,6 @@ s3e <- ggplot(subset(figure_data,metric == "multiAR" & n_spp == 25),
 
 ggsave("Results/figures/figureS3.pdf",
        ((s3a/s3b/s3c)|(s3d/s3e/patchwork::plot_spacer())) +
-         patchwork::plot_layout(guides = "collect"),
+         patchwork::plot_layout(guides = "collect") &
+         theme(strip.background = element_rect(fill="white")),
        width = 12,height = 7)

@@ -187,5 +187,6 @@ ggplot2::ggsave("Results/figures/figure5.pdf",
                   
                   plot_annotation(tag_levels ="a") +
                   plot_layout(nrow = 3, byrow = F,guides = "collect") &
-                  theme(plot.title = element_text(size = 10, face = "bold")),
+                  theme(plot.title = element_text(size = 10, face = "bold"))  &
+                  theme(strip.background = element_rect(fill="white")),
                 width = 7,height = 7)

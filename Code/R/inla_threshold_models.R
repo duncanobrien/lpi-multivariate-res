@@ -12,18 +12,23 @@ require(patchwork)
 prior.fixed <- list(mean.intercept = 0, prec.intercept = 1,
                     mean = 0, prec = 1)
 
+prior_prec = "expression:
+  log_dens = 0 - log(2) - theta / 2;
+  return(log_dens);
+"
+
 pred_success_data <- expand.grid("n_spp" = c(5,15,25),
                                  "stressed" = paste(c(0,1)),
                                  "ts_length" = c(0.1,0.4,0.7),
                                  "search_effort" = c(0.1,0.5,1.0))
 
 sample_id <- expand.grid("motif" = 1,
-                         "community" = 1:30,
+                         "community" = 1:25,
                          "sim" = 1:25) |>
   dplyr::mutate(sample_id = paste(motif,community,sim,sep = "_")) |>
   dplyr::select(sample_id) |> unlist() |> unname()
 
-draws <- 10000 #how samples from posterior for coefficient estimates
+draws <- 5000 #how samples from posterior for coefficient estimates
 newdata <- expand.grid("n_spp" = c(5,15,25),
                        "stressed" = paste(c(0,1)),
                        "ts_length" = c(0.2,0.4,0.6),
@@ -61,8 +66,7 @@ inla_success_data1 <-  subset(summary_data,metric == "multiJI") |>
 inla_success1 <- inla(threshold_crossed ~ n_spp*stressed*ts_length*search_effort 
                       +
                         f(comm_id, model = "iid",
-                          hyper = list(prec = list(prior = "logtnormal",
-                                                   param = c(0, 1)))) ,
+                          hyper = prior_prec) ,
                       data = inla_success_data1, 
                       family = "binomial",
                       lincomb = lincomb_summary,
@@ -100,8 +104,7 @@ inla_success_data2 <- subset(summary_data,metric == "max_uniJI") %>%
 inla_success2 <- inla(threshold_crossed ~ n_spp*stressed*ts_length*search_effort 
                       +
                         f(comm_id, model = "iid",
-                          hyper = list(prec = list(prior = "logtnormal",
-                                                   param = c(0, 1)))) ,
+                          hyper = prior_prec) ,
                       data = inla_success_data2, 
                       family = "binomial",
                       lincomb = lincomb_summary,
@@ -141,8 +144,7 @@ inla_success_data3 <- subset(summary_data,metric == "multiAR") %>%
 inla_success3 <- inla(threshold_crossed ~ n_spp*stressed*ts_length*search_effort 
                       +
                         f(comm_id, model = "iid",
-                          hyper = list(prec = list(prior = "logtnormal",
-                                                   param = c(0, 1)))) ,
+                          hyper = prior_prec) ,
                       data = inla_success_data3, 
                       family = "binomial",
                       lincomb = lincomb_summary,

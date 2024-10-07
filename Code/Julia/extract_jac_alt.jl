@@ -12,7 +12,7 @@ function critical_sys_harvest(control_range::StepRangeLen,odeproblem::ODEProblem
 
     jac_vector = hcat(control_range,zeros(length(control_range))) #create array to be populated
 
-    temp_parameters = control_p
+    temp_parameters = deepcopy(control_p)
 
     for j in 1:(size(jac_vector)[1])
         #setindex!(temp_parameters,jac_vector[j,1] , :signal) #change stress parameter
@@ -49,14 +49,14 @@ function critical_sys_harvest(control_range::StepRangeLen,odeproblem::ODEProblem
     return jac_vector
 end
 
-function critical_sys_invasive(control_range::StepRangeLen,odeproblem::ODEProblem,control_p::Dict;abs_max = false)
+function critical_sys_invasive(control_range::StepRangeLen,odeproblem::ODEProblem,control_p;abs_max = false)
 
     jac_vector = hcat(control_range,zeros(length(control_range))) #create array to be populated
 
-    temp_parameters = control_p
+    temp_parameters = deepcopy(control_p)
 
     for j in 1:(size(jac_vector)[1])
-        setindex!(temp_parameters,jac_vector[j,1] , :signal) #change stress parameter
+        #setindex!(temp_parameters,jac_vector[j,1] , :signal) #change stress parameter
         temp_parameters = (temp_parameters..., signal=jac_vector[j,1])
 
         prob_temp = remake(odeproblem; p=temp_parameters)
@@ -116,12 +116,16 @@ function extract_max_eigvec_alt(container,control_range::StepRangeLen, t::Int64,
         end =#
 
         if spp == "auto"
-            #if sum([container[j]["tlvl"][:,1] .== 3.0][1]) == 0|1
-            #    push!(params_remake,:spp => [findmax(x -> x == container[j]["R"][container[j]["tlvl"][:,1] .== 2.0][1], container[j]["R"])[2];])
+            #push!(parameters,:spp => [findmin(motif[i]["Neq"])[2];])
+    
+            #if sum([motif[i]["tlvl"][:,1] .== 3.0][1]) == 0|1
+            #push!(parameters,:spp => [findmax(x -> x == motif[i]["R"][motif[i]["tlvl"][:,1] .== 2.0][1], motif[i]["R"])[2];])
             #else
-                push!(params_remake,:spp => [findmax(x -> x == container[j]["R"][container[j]["tlvl"][:,1] .== 3.0][1], container[j]["R"])[2];])
+            push!(params_remake,:spp => [findmax(x -> x == container[j]["R"][container[j]["tlvl"][:,1] .== 3.0][1], container[j]["R"])[2];])
             #end
-        else
+        elseif spp == "spp"
+            push!(params_remake,:spp => container[j]["spp"])
+        else 
             push!(params_remake,:spp => spp)
         end
         params_remake = (; params_remake...) #convert Dict to NamedTuple

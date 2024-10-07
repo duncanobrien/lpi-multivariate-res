@@ -11,12 +11,19 @@ prior.fixed <- list(mean.intercept = 0, prec.intercept = 1,
                     mean = 0, prec = 1,
                     correlation.matrix = F) #normal prior on intercept and fixed effects (mean = 0, sd = 1)
 
+prior_prec = "expression:
+  log_dens = 0 - log(2) - theta / 2;
+  return(log_dens);
+"
+ar_prior = list(theta1 = list(prior="pc.prec", param=c(0.01*3, 0.01)), #penalised complexity prior statement, where we state the odds of the standard deviation captured by the ar1 term exceeding 3*residual standard deviation are very small (probabaility = 0.01)
+                theta2 = list(prior="pc.cor1", param=c(0, 0.9), initial = 0)) #Here we state the odds of detecting some autocorrelation (rho greater than 0) are very high (probability of 0.9). We set the inital rho at 0.
+
 pred_data <- expand.grid("stand_time" = seq(0,1,0.01), #range of data to visualise trends over
                          "stressed" = paste(c(0,1)),
                          "ts_length" = c(0.1,0.4,0.7),
                          "search_effort" = c(0.1,0.5,1.0))
 
-draws <- 10000 #how samples from posterior for coefficient estimates
+draws <- 5000 #how samples from posterior for coefficient estimates
 newdata <- expand.grid("stand_time" = c(0,1), #only provide max and min stand_time to estimate slope
                        "stressed" = paste(c(0,1)),
                        "ts_length" = c(0.2,0.4,0.6),
@@ -25,7 +32,7 @@ Xmat <- model.matrix(~stand_time*stressed*ts_length*search_effort, data=newdata)
 lincomb <- inla.make.lincombs(as.data.frame(Xmat)) #linear combinations to provide to INLA
 
 sample_id <- expand.grid("motif" = 1,
-                         "community" = 1:30,
+                         "community" = 1:25,
                          "sim" = 1:25) |>
   dplyr::mutate(sample_id = paste(motif,community,sim,sep = "_")) |>
   dplyr::select(sample_id) |> unlist() |> unname()
@@ -59,7 +66,8 @@ resilience_25_data <- as.data.table(readRDS("Data/resilience/full/motif1_25_inva
 inla_data_25_1 <- subset(resilience_25_data,metric == "multiJI") |>
   dplyr::mutate(stressed = paste(stressed),
                 ar_id_numeric = as.numeric(as.factor(ar_id))) |>
-  na.omit()
+  na.omit()|>
+  dplyr::select(metric_value,stand_time,stressed,ts_length,search_effort,comm_id,ar_id,ar_id_numeric,time)
 
 #Zcomm_sim <- as(model.matrix( ~ 0 + comm_id:sim_id, data = inla_data_25_1), "Matrix") #unable to fit nested effect due to memory limitations
 
@@ -67,12 +75,10 @@ inla_data_25_1 <- subset(resilience_25_data,metric == "multiJI") |>
 inla_25_1 <- inla(metric_value ~ stand_time*stressed*ts_length*search_effort 
                   +
                     f(comm_id, model = "iid",
-                      hyper = list(prec = list(prior = "logtnormal",
-                                               param = c(0, 1))))  #random intercept for shared communities
+                      hyper = prior_prec)  #random intercept for shared communities
                   +f(ar_id,stand_time, model = "iid",
-                     hyper =list(prec = list(prior = "logtnormal",
-                                             param = c(0, 1))))  #random slopes per simulation
-                  +f(time, model = "ar",order = 1,replicate = ar_id_numeric) #autocorrelation term
+                     hyper =  prior_prec)  #random slopes per simulation
+                  +f(time, model = "ar",order = 1,replicate = ar_id_numeric,hyper = ar_prior) #autocorrelation term
                   ,
                   data = inla_data_25_1, 
                   family = "gaussian",
@@ -81,9 +87,9 @@ inla_25_1 <- inla(metric_value ~ stand_time*stressed*ts_length*search_effort
                     int.strategy = "eb",
                     force.diagonal = T
                   ),
-                  num.threads = 5,
-                  control.predictor=list(compute=TRUE),
-                  control.compute = list(config = TRUE,cpo = F),
+                  num.threads = 4,
+                  #control.predictor=list(compute=TRUE),
+                  #control.compute = list(config = TRUE,cpo = F),
                   control.fixed = prior.fixed
 )
 
@@ -135,26 +141,25 @@ saveRDS(inla_25_1,"Results/models/motif1_25_invasive_multiJI_model.rds")
 inla_data_25_2 <-  subset(resilience_25_data,metric == "mean_uniJI" ) |>
   dplyr::mutate(stressed = paste(stressed),
                 ar_id_numeric = as.numeric(as.factor(ar_id))) |>
-  na.omit()
+  na.omit() |>
+  dplyr::select(metric_value,stand_time,stressed,ts_length,search_effort,comm_id,ar_id,ar_id_numeric,time)
 
 inla_25_2 <- inla(metric_value ~ stand_time*stressed*ts_length*search_effort 
                   +
                     f(comm_id, model = "iid",
-                      hyper = list(prec = list(prior = "logtnormal",
-                                               param = c(0, 1)))) +
-                    f(ar_id,stand_time, model = "iid",
-                      hyper = list(prec = list(prior = "logtnormal",
-                                               param = c(0, 1)))) 
-                  +f(time, model = "ar",order = 1,replicate = ar_id_numeric) #autocorrelation term
+                      hyper = prior_prec)  #random intercept for shared communities
+                  +f(ar_id,stand_time, model = "iid",
+                     hyper =  prior_prec)  #random slopes per simulation
+                  +f(time, model = "ar",order = 1,replicate = ar_id_numeric,hyper = ar_prior) #autocorrelation term
                   ,
                   data = inla_data_25_2, 
                   family = "gaussian",
                   lincomb = lincomb,
                   control.inla = list(int.strategy = "eb",
                                       force.diagonal = T),
-                  num.threads = 5,
-                  control.predictor=list(compute=TRUE),
-                  control.compute = list(config = TRUE,cpo = F),
+                  num.threads = 4,
+                  #control.predictor=list(compute=TRUE),
+                  #control.compute = list(config = TRUE,cpo = F),
                   control.fixed = prior.fixed)
 
 plot((1:nrow(na.omit(inla_data_25_2)))/(nrow(na.omit(inla_data_25_2)) +1), 
@@ -205,27 +210,25 @@ saveRDS(inla_25_2,"Results/models/motif1_25_invasive_uniJI_model.rds")
 inla_data_25_3 <-  subset(resilience_25_data,metric == "FI") |>
   dplyr::mutate(stressed = paste(stressed),
                 ar_id_numeric = as.numeric(as.factor(ar_id))) |>
-  na.omit()
-
+  na.omit()|>
+  dplyr::select(metric_value,stand_time,stressed,ts_length,search_effort,comm_id,ar_id,ar_id_numeric,time)
 
 inla_25_3 <- inla(metric_value ~ stand_time*stressed*ts_length*search_effort 
                   +
                     f(comm_id, model = "iid",
-                      hyper =  list(prec = list(prior = "logtnormal",
-                                                param = c(0, 1)))) +
-                    f(ar_id,stand_time, model = "iid",
-                      hyper =  list(prec = list(prior = "logtnormal",
-                                                param = c(0, 1)))) 
-                  +f(time, model = "ar",order = 1,replicate = ar_id_numeric) #autocorrelation term
+                      hyper = prior_prec)  #random intercept for shared communities
+                  +f(ar_id,stand_time, model = "iid",
+                     hyper =  prior_prec)  #random slopes per simulation
+                  +f(time, model = "ar",order = 1,replicate = ar_id_numeric,hyper = ar_prior) #autocorrelation term
                   ,
                   data = inla_data_25_3, 
                   family = "gaussian",
                   lincomb = lincomb,
                   control.inla = list(int.strategy = "eb",
                                       force.diagonal = T),
-                  num.threads = 5,
-                  control.predictor=list(compute=TRUE),
-                  control.compute = list(config = TRUE,cpo = F),
+                  num.threads = 4,
+                  #control.predictor=list(compute=TRUE),
+                  #control.compute = list(config = TRUE,cpo = F),
                   control.fixed = prior.fixed)
 
 plot((1:nrow(na.omit(inla_data_25_3)))/(nrow(na.omit(inla_data_25_3)) +1), 
@@ -277,26 +280,25 @@ inla_data_25_4 <-  subset(resilience_25_data,metric == "mvi") |>
   dplyr::mutate(stressed = paste(stressed),
                 ar_id_numeric = as.numeric(as.factor(ar_id))) |>
   dplyr::mutate(metric_value = log(metric_value)) |>
-  na.omit()
+  na.omit() |>
+  dplyr::select(metric_value,stand_time,stressed,ts_length,search_effort,comm_id,ar_id,ar_id_numeric,time)
 
 inla_25_4 <- inla(metric_value ~ stand_time*stressed*ts_length*search_effort 
                   +
                     f(comm_id, model = "iid",
-                      hyper = list(prec = list(prior = "logtnormal",
-                                               param = c(0, 1)))) +
-                    f(ar_id,stand_time, model = "iid",
-                      hyper = list(prec = list(prior = "logtnormal",
-                                               param = c(0, 1)))) 
-                  +f(time, model = "ar",order = 1,replicate = ar_id_numeric) #autocorrelation term
+                      hyper = prior_prec)  #random intercept for shared communities
+                  +f(ar_id,stand_time, model = "iid",
+                     hyper =  prior_prec)  #random slopes per simulation
+                  +f(time, model = "ar",order = 1,replicate = ar_id_numeric,hyper = ar_prior) #autocorrelation term
                   ,
                   data = inla_data_25_4, 
                   family = "gaussian",
                   lincomb = lincomb,
                   control.inla = list(int.strategy = "eb",
                                       force.diagonal = T),
-                  num.threads = 5,
-                  control.predictor=list(compute=TRUE),
-                  control.compute = list(config = TRUE,cpo = F),
+                  num.threads = 4,
+                  #control.predictor=list(compute=TRUE),
+                  #control.compute = list(config = TRUE,cpo = F),
                   control.fixed = prior.fixed)
 
 plot((1:nrow(na.omit(inla_data_25_4)))/(nrow(na.omit(inla_data_25_4)) +1), 
@@ -347,26 +349,25 @@ saveRDS(inla_25_4,"Results/models/motif1_25_invasive_MVI_model.rds")
 inla_data_25_5 <-  subset(resilience_25_data,metric == "multiAR") |>
   dplyr::mutate(stressed = paste(stressed),
                 ar_id_numeric = as.numeric(as.factor(ar_id))) |>
-  na.omit()
+  na.omit() |>
+  dplyr::select(metric_value,stand_time,stressed,ts_length,search_effort,comm_id,ar_id,ar_id_numeric,time)
 
 inla_25_5 <- inla(metric_value ~ stand_time*stressed*ts_length*search_effort 
                   +
                     f(comm_id, model = "iid",
-                      hyper = list(prec = list(prior = "logtnormal",
-                                               param = c(0, 1)))) +
-                    f(ar_id,stand_time, model = "iid",
-                      hyper = list(prec = list(prior = "logtnormal",
-                                               param = c(0, 1)))) 
-                  +f(time, model = "ar",order = 1,replicate = ar_id_numeric) #autocorrelation term
+                      hyper = prior_prec)  #random intercept for shared communities
+                  +f(ar_id,stand_time, model = "iid",
+                     hyper =  prior_prec)  #random slopes per simulation
+                  +f(time, model = "ar",order = 1,replicate = ar_id_numeric,hyper = ar_prior) #autocorrelation term
                   ,
                   data = inla_data_25_5, 
                   family = "gaussian",
                   lincomb = lincomb,
                   control.inla = list(int.strategy = "eb",
                                       force.diagonal = T),
-                  num.threads = 5,
-                  control.predictor=list(compute=TRUE),
-                  control.compute = list(config = TRUE,cpo = F),
+                  num.threads = 4,
+                  #control.predictor=list(compute=TRUE),
+                  #control.compute = list(config = TRUE,cpo = F),
                   control.fixed = prior.fixed)
 
 plot((1:nrow(na.omit(inla_data_25_5)))/(nrow(na.omit(inla_data_25_5)) +1), 

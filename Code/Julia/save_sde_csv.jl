@@ -361,7 +361,9 @@ function invasive_sim(motif::Vector{DictoVec{}}, u0,spp::Union{Vector, Matrix,St
         #else
         push!(parameters,:spp => [findmax(x -> x == motif[i]["R"][motif[i]["tlvl"][:,1] .== 3.0][1], motif[i]["R"])[2];])
         #end
-    else
+    elseif spp == "spp"
+        push!(parameters,:spp => motif[i]["spp"])
+    else 
         push!(parameters,:spp => spp)
     end
    

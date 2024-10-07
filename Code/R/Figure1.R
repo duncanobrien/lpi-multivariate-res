@@ -9,41 +9,43 @@ require(tidygraph)
 require(data.table)
 require(magrittr)
 source("Code/R/auxiliary_functions/julia_wrangle_function.R")
-
+set.seed(124)
 motif = 1 
 model = "invasive"
 n_spp = 5
 simulation_id <- "1_2_1" #example simulation
 
+build_A_dakos <- function(n){
+  A <- matrix(0,n,n)
+  A[upper.tri(A, diag = TRUE)] <- runif((n * (n - 1)/ 2) + n,0,1.5)
+  A[lower.tri(A)] <- A[upper.tri(A)]
+  diag(A) <- 1
+  return(A)
+}
+
 #######################
 # Load in interaction matrices
 #######################
+interaction_matrix <- build_A_dakos(n_spp)
 
-matrix_path <- paste("Data/networks/",n_spp,"_spp/","web_",motif,".RData",sep="") #define stressed model path
-load(matrix_path)
-
-simulation_info <- out_file[[as.numeric(strsplit(simulation_id,split = "_")[[1]][2])]] #extract just the example simulation
-
-interaction_matrix <- simulation_info$A_matrix
-
-tlvl_matrix <- as.data.frame(simulation_info$tlvl)
-
-for(j in unique(tlvl_matrix$species)){
-  if(sum(tlvl_matrix$tlvl == subset(tlvl_matrix,species == j)$tlvl) > 1){
-    interaction_matrix[j,which(tlvl_matrix$tlvl == subset(tlvl_matrix,species == j)$tlvl)] <- 1
-  }
-} #convert intra-trophic interactions to positive to ensure they are present in the plot 
-
-interaction_matrix <- abs(ceiling(interaction_matrix)) #extract just the positive interactions
-diag(interaction_matrix) = 1 #also include intraspecific interaction
+# for(j in unique(tlvl_matrix$species)){
+#   if(sum(tlvl_matrix$tlvl == subset(tlvl_matrix,species == j)$tlvl) > 1){
+#     interaction_matrix[j,which(tlvl_matrix$tlvl == subset(tlvl_matrix,species == j)$tlvl)] <- 1
+#   }
+# } #convert intra-trophic interactions to positive to ensure they are present in the plot 
+# 
+# interaction_matrix <- abs(ceiling(interaction_matrix)) #extract just the positive interactions
+# diag(interaction_matrix) = 1 #also include intraspecific interaction
 
 graph5 <- igraph::graph_from_adjacency_matrix(interaction_matrix,
                                               mode="directed", diag=T,weighted = T) #create graph
 
-igraph::V(graph5)$tlvl <- simulation_info$tlvl[,1] #label nodes with trophic levels
-igraph::V(graph5)$species <- simulation_info$tlvl[,2] #label nodes with species levels
-igraph::E(graph5)$shared <- c("self","intra","intra","self","inter","inter",
-                              "inter","inter","inter","inter","inter") #label edges with interaction types
+#igraph::V(graph5)$tlvl <- simulation_info$tlvl[,1] #label nodes with trophic levels
+#igraph::V(graph5)$species <- simulation_info$tlvl[,2] #label nodes with species levels
+igraph::V(graph5)$species <- 1:n_spp #label nodes with species levels
+igraph::E(graph5)$weight <- as.vector(interaction_matrix)
+# igraph::E(graph5)$shared <- c("self","intra","intra","self","inter","inter",
+#                               "inter","inter","inter","inter","inter") #label edges with interaction types
 
 example_graph <- tidygraph::as_tbl_graph(graph5, directed = FALSE) #make tidy
 
@@ -111,21 +113,22 @@ simulation_data <- rbind(resilience_stress_csv,resilience_unstressed_csv) %>%
 # Create figure
 #######################
 
-p1 <- ggraph(example_graph, layout = "stress") +
-  geom_edge_link(aes(color = shared),
-                 width = 2) +
+p1 <- ggraph(example_graph) +
+  geom_edge_parallel(#aes(color = shared),
+                 aes(width = weight)) +
   geom_node_point(size = 11,
                   col = "#5D369D") +
-  geom_edge_loop(aes(strength = 0.5),check_overlap = T, 
-                 arrow = arrow(length = unit(6, "pt"), type = "closed"),
-                 start_cap = circle(3, "mm"),
-                 end_cap = circle(3, "mm"))  +
+  # geom_edge_loop(aes(strength = 0.2),check_overlap = T, 
+  #                arrow = arrow(length = unit(6, "pt"), type = "closed"),
+  #                start_cap = circle(3, "mm"),
+  #                end_cap = circle(3, "mm"))  +
   scale_edge_color_manual(values = c("#E86100","#929292"),guide = "none")+
+  scale_edge_width_continuous(range = c(0.5,2)) +
   geom_node_text(aes(label = species),size = 5, col="white") +
   scale_x_reverse() + 
-  coord_flip(ylim = c(-0.75,0.8),xlim = c(2,-2)) +
-  theme_void()
-
+  labs(edge_width = "Interaction\nstrength") +
+  coord_flip(ylim = c(-0.6,0.5),xlim = c(1,-0.5)) +
+  theme_void() 
 
 p2 <- ggplot(simulation_data,aes(x = time, y = density,col=species)) +
   geom_segment(aes(x = inflection_pt_incr,xend = inflection_pt_incr,y = 0, yend = Inf),
@@ -136,12 +139,19 @@ p2 <- ggplot(simulation_data,aes(x = time, y = density,col=species)) +
   scale_color_manual(values = c("grey40","#bfbd3d", "#5d3099", "#69c756","#6886c4"),
                      guide = "none") +
   theme_bw() +
-  theme(legend.title = ggplot2::element_blank())
+  theme(legend.title = ggplot2::element_blank(),
+        strip.background = element_rect(fill="white"))
 
 p3 <- ggplot() +
   ggpubr::background_image(magick::image_read("Results/figures/figure1_c.png"))
 
+layout <- "
+AABBB
+CCCCC
+"
+
 ggsave("Results/figures/figure1.pdf",
-       (p1|p2)/p3  + 
-         plot_annotation(tag_levels = "a"),
-       width = 6,height = 6)
+       p1 + p2 + p3  + 
+         plot_annotation(tag_levels = "a") + plot_layout(design = layout,
+                                                         heights = c(1.25,2)),
+       width = 8,height = 7)

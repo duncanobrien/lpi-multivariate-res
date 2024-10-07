@@ -29,6 +29,7 @@ function gen_lotka_volterra_invasive_harvest!(du, u, par, t)
             Kt = par[:k][i]
         end
             du[i] = (u[i] * (par[:r][i]) * (1.0-(gen_interaction_k(u, i, par)/Kt))) + par[:imm][i]
+            #du[i] = (u[i] * (par[:r][i]) * (1.0-(gen_interaction_k(u, i, par)))) 
             #du[i] = (u[i] * (par[:r][i]) * (Kt-(gen_interaction_k(u, i, par))))/Kt + par[:imm][i]
 
         end
@@ -74,4 +75,14 @@ function stoc_gen_lv_delayed!(du,u, par, t)
         #du[i] = par[:ex_ctrl][i]*w[1]
         end
     end
+end
+
+function build_A_dakos!(n::Int64)
+    n = convert(UInt8,n)
+    A = zeros(n, n)
+    A[ UpperTriangular(trues(size(A))) ] = rand(Distributions.Uniform(0.0,1.5),convert(Int,(n * (n - 1)/ 2) + n)) #randomly populate upper triangle
+    #A = Symmetric(A,:U)
+    A[ LowerTriangular(trues(size(A))) ] = A[ UpperTriangular(trues(size(A))) ]
+    A[ diagind(A) ] .= 1
+    return A
 end

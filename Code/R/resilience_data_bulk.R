@@ -44,7 +44,7 @@ sample_id <- expand.grid("motif" = 1,
 
 
 i=1
-motif_data <- parameter_space[[6]]
+motif_data <- parameter_space[[3]]
 
 lapply(parameter_space, function(motif_data){
   
